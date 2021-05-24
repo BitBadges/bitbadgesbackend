@@ -22,22 +22,24 @@ let db = {
   ],
   badges: [
     {
-      issuer: "",
-      recipient: "",
-      id: "",
+      issuer: "", //required to not be empty
+      recipient: "", //required to not be empty
+      id: "", //will be added automatically
       imageUrl: "",
-      title: "",
+      title: "", //requied to not be empty
+      externalUrl: "",
+      backgroundColor: "", //required to not be empty
       description:
         "" /* Put any instructions, text, accompanying info, links, videos, additional files, images in here. Note that " */,
       validDates: true,
-      validDateStart: new Date(),
-      validDateEnd: new Date(),
-      dateCreated: new Date(),
-      ipfsId: "",
+      validDateStart: 1, //integer representing seconds since UNIX epoch
+      validDateEnd: 5, //integer representing seconds since UNIX epoch
+      dateCreated: Date.now(),
     },
   ],
   badgePages: [
     {
+      //all must be strings and title, issuer, backgroundColor are required
       title: "",
       issuer: "",
       preReqs: "",
@@ -45,6 +47,7 @@ let db = {
       description: "",
       externalUrl: "",
       imageUrl: "",
+      backgroundColor: "",
     },
   ],
 };

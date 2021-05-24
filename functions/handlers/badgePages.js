@@ -2,6 +2,7 @@ const { firebaseConfig } = require("firebase-functions");
 const { db, firestoreRef } = require("../utils/admin");
 const { isValidString, isString } = require("../utils/helpers");
 
+//Getter method for a single specified badge page
 exports.getBadgePage = (req, res) => {
   let badgeId = req.params.id;
 
@@ -22,6 +23,7 @@ exports.getBadgePage = (req, res) => {
     });
 };
 
+//Deletes a badge page
 exports.deleteBadgePage = (req, res) => {
   let badgeId = req.params.id;
   let userId = req.user.id;
@@ -46,6 +48,7 @@ exports.deleteBadgePage = (req, res) => {
   });
 };
 
+//Creates a new badge page after verifying all input data is valid
 exports.createBadgePage = async (req, res) => {
   let userId = req.user.id;
   let docId;
@@ -57,11 +60,13 @@ exports.createBadgePage = async (req, res) => {
     description: req.body.description,
     externalUrl: req.body.externalUrl,
     imageUrl: req.body.imageUrl,
+    backgroundColor: req.body.backgroundColor,
   };
 
   let valid =
     isValidString(badgeData.title) &&
     isValidString(badgeData.issuer) &&
+    isValidString(badgeData.backgroundColor) &&
     isString(badgeData.preReqs) &&
     isString(badgeData.validity) &&
     isString(badgeData.description) &&

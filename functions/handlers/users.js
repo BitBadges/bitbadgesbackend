@@ -5,36 +5,24 @@ const {
   isValidInteger,
 } = require("../utils/helpers");
 
-exports.createUserAccount = async (req, res) => {
-  let userId = req.user.id;
-  await db
-    .doc(`/users/${userId}`)
-    .get()
-    .then((doc) => {
-      if (doc.exists) {
-        return res.status(200).json({
-          general: "Account has already been created",
-        });
-      } else {
-        db.doc(`/users/${userId}`).set({
-          badgesIssued: [],
-          badgesReceived: [],
-          badgesCreated: [],
-        });
-        return res.status(200).json({
-          general: `Account ${userId} has been created`,
-        });
-      }
-    });
-};
-
 exports.getUserInfo = async (req, res) => {
   let userId = req.params.id;
   let userData = {};
   await db
     .doc(`/users/${userId}`)
     .get()
-    .then((doc) => {
+    .then(async (doc) => {
+      if (!doc.exists) {
+        const blankTemplate = {
+          badgesIssued: [],
+          badgesReceived: [],
+          badgesCreated: [],
+        };
+        await db.doc(`/users/${userId}`).set(blankTemplate);
+
+        blankTemplate.portfolioPages = [];
+        return res.status(201).json(blankTemplate);
+      }
       userData = doc.data();
     })
     .catch((err) => {
@@ -67,6 +55,7 @@ exports.getUserInfo = async (req, res) => {
 
 exports.addPage = async (req, res) => {
   let userId = req.user.id;
+
   let newPage = {
     pageTitle: req.body.pageTitle,
     badges: req.body.badges,
@@ -74,6 +63,14 @@ exports.addPage = async (req, res) => {
   };
 
   let valid = isValidString(newPage.pageTitle);
+  if (!valid) {
+    return res.status(400).json({
+      general: `Please enter a valid string for the page title`,
+    });
+  }
+  
+  
+  valid = isValidString(newPage.pageTitle);
   if (!valid) {
     return res.status(400).json({
       general: `Please enter a valid string for the page title`,

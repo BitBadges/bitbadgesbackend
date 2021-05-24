@@ -9,6 +9,7 @@ const {
   isBoolean,
 } = require("../utils/helpers");
 
+//Getter method for a badge
 exports.getBadge = (req, res) => {
   let badgeId = req.params.id;
 
@@ -29,6 +30,7 @@ exports.getBadge = (req, res) => {
     });
 };
 
+//Creates a badge after validating all input is valid
 exports.createBadge = async (req, res) => {
   let userId = req.user.id;
   let badgeData = {
@@ -40,6 +42,8 @@ exports.createBadge = async (req, res) => {
     validDates: req.body.validDates,
     validDateStart: req.body.validDateStart,
     validDateEnd: req.body.validDateEnd,
+    backgroundColor: req.body.backgroundColor,
+    externalUrl: req.body.externalUrl,
     dateCreated: Date.now(),
   };
 
@@ -47,7 +51,9 @@ exports.createBadge = async (req, res) => {
     isValidString(badgeData.title) &&
     isValidString(badgeData.issuer) &&
     isValidString(badgeData.recipient) &&
+    isValidString(badgeData.backgroundColor) &&
     isString(badgeData.description) &&
+    isString(badgeData.externalUrl) &&
     isString(badgeData.imageUrl);
 
   if (!valid) {
@@ -94,10 +100,13 @@ exports.createBadge = async (req, res) => {
       }
     });
   if (!valid) {
-    return res.status(400).json({
-      general: `Recipient has not made a BitBadges account.`,
+    await db.doc(`/users/${badgeData.recipient}`).set({
+      badgesIssued: [],
+      badgesReceived: [],
+      badgesCreated: [],
     });
   }
+
   Promise.all([
     db.collection(`/badges`).doc(ipfsHash).set(badgeData),
     db.doc(`/users/${badgeData.recipient}`).update({
