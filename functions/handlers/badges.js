@@ -97,7 +97,7 @@ exports.createBadge = async (req, res) => {
 
   //get recipient publicKe
   let recipientPublicKey = null;
-  const url = `https://bitclout.com/api/v0/get-single-profile`;
+  let url = `https://bitclout.com/api/v0/get-single-profile`;
   let resData = {};
   console.log({ PublicKeyBase58Check: userId });
   await fetch(url, {
@@ -144,5 +144,85 @@ exports.createBadge = async (req, res) => {
       badgesIssued: firestoreRef.FieldValue.arrayUnion(ipfsHash),
     }),
   ]);
+
+  url = `https://bitclout.com/api/v0/submit-post`;
+  let transactionHex = null;
+  await fetch(url, {
+    method: "post",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      UpdaterPublicKeyBase58Check:
+        "BC1YLjPA6yn4mk9NnbFUiNbjitu4442dSwLKrTFLBqTwjph11HRjjZZ",
+      PostHashHexToModify: "",
+      ParentStakeID: "",
+      Title: "",
+      BodyObj: {
+        Body: ipfsHash,
+        ImageURLs: [],
+      },
+      RecloutedPostHashHex: "",
+      PostExtraData: {},
+      Sub: "",
+      IsHidden: false,
+      MinFeeRateNanosPerKB: 1000,
+    }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      transactionHex = data.TransactionHex;
+    })
+    .catch((error) => {
+      //should never reach here
+      return res.status(400).json({
+        general:
+          "IMPORTANT: Could not submit post to BitClout chain! Please contact @BitBadges with your badge id to get it posted",
+        error: error,
+      });
+    });
+
+  url = `https://us-central1-bitbadgespostbot.cloudfunctions.net/api/sign`;
+  let signedHex = null;
+  await fetch(url, {
+    method: "post",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      transactionHex,
+    }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      signedHex = data.signedHex;
+    })
+    .catch((error) => {
+      //should never reach here
+      return res.status(400).json({
+        general:
+          "IMPORTANT: Could not submit post to BitClout chain because we couldn't sign your transaction hex! Please contact @BitBadges with your badge id to get it posted",
+        error: error,
+      });
+    });
+
+  url = `https://bitclout.com/api/v0/submit-transaction`;
+  await fetch(url, {
+    method: "post",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      TransactionHex: signedHex,
+    }),
+  }).catch((error) => {
+    //should never reach here
+    return res.status(400).json({
+      general:
+        "IMPORTANT: Could not submit post to BitClout chain because we couldn't submit your transaction! Please contact @BitBadges with your badge id to get it posted",
+      error: error,
+    });
+  });
+
   return res.status(201).send(badgeData);
 };
