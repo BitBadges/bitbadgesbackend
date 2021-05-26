@@ -1,6 +1,7 @@
 const { db, firestoreRef } = require("../utils/admin");
 const { create } = require("ipfs-http-client");
 const client = create("https://ipfs.infura.io:5001");
+const fetch = require("node-fetch");
 
 const {
   isValidString,
@@ -61,12 +62,14 @@ exports.createBadge = async (req, res) => {
       general: `String inputs are not formatted correctly`,
     });
   }
-  valid = badgeData.issuer === userId;
+
+  valid = req.user.username === badgeData.issuer;
   if (!valid) {
     return res.status(400).json({
       general: `You can not issue in someone else's name. Change issuer to your id`,
     });
   }
+
   valid = isBoolean(badgeData.validDates);
   if (!valid) {
     return res.status(400).json({
@@ -91,8 +94,33 @@ exports.createBadge = async (req, res) => {
   let ipfsHash = cid.toString();
 
   badgeData.id = ipfsHash;
+
+  //get recipient publicKe
+  let recipientPublicKey = null;
+  const url = `https://bitclout.com/api/v0/get-single-profile`;
+  let resData = {};
+  console.log({ PublicKeyBase58Check: userId });
+  await fetch(url, {
+    method: "post",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ Username: badgeData.recipient }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      resData = data;
+      recipientPublicKey = data.Profile.PublicKeyBase58Check;
+    })
+    .catch((error) => {
+      return res.status(400).json({
+        general: "Could not get public key for recipient's username",
+        error: error,
+      });
+    });
+
   await db
-    .doc(`/users/${badgeData.recipient}`)
+    .doc(`/users/${recipientPublicKey}`)
     .get()
     .then((doc) => {
       if (!doc.exists) {
@@ -100,19 +128,19 @@ exports.createBadge = async (req, res) => {
       }
     });
   if (!valid) {
-    await db.doc(`/users/${badgeData.recipient}`).set({
+    await db.doc(`/users/${recipientPublicKey}`).set({
       badgesIssued: [],
       badgesReceived: [],
       badgesCreated: [],
     });
   }
-
+  console.log(badgeData.issuer);
   Promise.all([
     db.collection(`/badges`).doc(ipfsHash).set(badgeData),
-    db.doc(`/users/${badgeData.recipient}`).update({
+    db.doc(`/users/${recipientPublicKey}`).update({
       badgesReceived: firestoreRef.FieldValue.arrayUnion(ipfsHash),
     }),
-    db.doc(`/users/${badgeData.issuer}`).update({
+    db.doc(`/users/${userId}`).update({
       badgesIssued: firestoreRef.FieldValue.arrayUnion(ipfsHash),
     }),
   ]);

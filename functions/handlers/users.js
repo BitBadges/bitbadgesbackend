@@ -1,12 +1,80 @@
 const { db, firestoreRef } = require("../utils/admin");
+const axios = require("axios");
+const fetch = require("node-fetch");
 const {
   isValidString,
   isValidBadgeArray,
   isValidInteger,
 } = require("../utils/helpers");
 
+exports.getPublicKey = async (req, res) => {
+  let userName = req.params.userName;
+  const url = `https://bitclout.com/api/v0/get-single-profile`;
+  let resData = {};
+  await fetch(url, {
+    method: "post",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ Username: userName }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      resData = data;
+      console.log("Success:", data);
+    })
+    .catch((error) => {
+      console.error("Error:", error);
+    });
+
+  return res.status(201).json(resData);
+};
+exports.getUsername = async (req, res) => {
+  let publicKey = req.params.publicKey;
+  const url = `https://bitclout.com/api/v0/get-single-profile`;
+  let resData = {};
+  console.log({ PublicKeyBase58Check: publicKey });
+  await fetch(url, {
+    method: "post",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ PublicKeyBase58Check: publicKey }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      resData = data;
+      console.log("Success:", data);
+    })
+    .catch((error) => {
+      console.error("Error:", error);
+    });
+
+  return res.status(201).json(resData);
+};
+
 exports.getUserInfo = async (req, res) => {
-  let userId = req.params.id;
+  let userName = req.params.id;
+  let userId = null;
+  const url = `https://bitclout.com/api/v0/get-single-profile`;
+  let resData = {};
+  await fetch(url, {
+    method: "post",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ Username: userName }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      resData = data;
+      userId = data.Profile.PublicKeyBase58Check;
+      console.log("Success:", data);
+    })
+    .catch((error) => {
+      console.error("Error:", error);
+    });
+
   let userData = {};
   await db
     .doc(`/users/${userId}`)
@@ -55,7 +123,7 @@ exports.getUserInfo = async (req, res) => {
 
 exports.addPage = async (req, res) => {
   let userId = req.user.id;
-
+  let userName = req.user.username;
   let newPage = {
     pageTitle: req.body.pageTitle,
     badges: req.body.badges,
@@ -68,8 +136,7 @@ exports.addPage = async (req, res) => {
       general: `Please enter a valid string for the page title`,
     });
   }
-  
-  
+
   valid = isValidString(newPage.pageTitle);
   if (!valid) {
     return res.status(400).json({

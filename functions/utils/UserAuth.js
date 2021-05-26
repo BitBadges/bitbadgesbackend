@@ -5,6 +5,7 @@ const bs58check = require("bs58check");
 const KeyEncoder = require("key-encoder").default;
 const { db, firestoreRef } = require("./admin");
 
+const fetch = require("node-fetch");
 /**
  * Validates JWT token using BitClout Identity
  *
@@ -73,9 +74,32 @@ module.exports = async (req, res, next) => {
     });
   }
 
+  const url = `https://bitclout.com/api/v0/get-single-profile`;
+  let resData = {};
+  console.log({ PublicKeyBase58Check: publickey });
+  await fetch(url, {
+    method: "post",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ PublicKeyBase58Check: publickey }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      resData = data;
+      console.log("Success:", data);
+    })
+    .catch((error) => {
+      console.error("Error:", error);
+      return res.status(400).json({
+        general: "Error. Could not get username for public key",
+      });
+    });
+
   //set req.user.id to their BitClout Public Key
   req.user = {};
   req.user.id = publickey;
+  req.user.username = resData.Profile.Username;
 
   //if account hasn't been created, create it
   await db
@@ -97,6 +121,5 @@ module.exports = async (req, res, next) => {
         general: `Could not create ${req.user.id}'s data in our database.`,
       });
     });
-
   next();
 };

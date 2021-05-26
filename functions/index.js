@@ -4,11 +4,17 @@ const app = require("express")();
 const cors = require("cors");
 app.use(cors());
 
-const { addPage, deletePage, getUserInfo } = require("./handlers/users");
+const {
+  addPage,
+  deletePage,
+  getUserInfo,
+  getUsername,
+} = require("./handlers/users");
 
 const { getBadge, createBadge } = require("./handlers/badges");
 
 const {
+  getAllBadgePages,
   getBadgePage,
   createBadgePage,
   deleteBadgePage,
@@ -22,6 +28,9 @@ const UserAuth = require("./utils/UserAuth");
 app.get("/users/:id", getUserInfo);
 app.get("/badges/:id", getBadge);
 app.get("/badgePages/:id", getBadgePage);
+
+app.get("/badgePages", getAllBadgePages);
+app.get("/username/:publicKey", getUsername);
 
 /**
  * Issues a badge from current user to a seleted recipient

@@ -1,6 +1,28 @@
 const { firebaseConfig } = require("firebase-functions");
 const { db, firestoreRef } = require("../utils/admin");
 const { isValidString, isString } = require("../utils/helpers");
+//Getter method for all badge pages
+exports.getAllBadgePages = async (req, res) => {
+  let badgePages = [];
+  await db
+    .collection("badgePages")
+    .get()
+    .then((querySnapshot) => {
+      querySnapshot.forEach((doc) => {
+        let x = doc.data();
+        x.id = doc.id;
+        badgePages.push(x);
+      });
+    })
+    .catch((error) => {
+      console.log("Error getting documents: ", error);
+      return res.status(400).json({
+        general: error,
+      });
+    });
+
+  return res.status(201).json(badgePages);
+};
 
 //Getter method for a single specified badge page
 exports.getBadgePage = (req, res) => {
@@ -51,6 +73,7 @@ exports.deleteBadgePage = (req, res) => {
 //Creates a new badge page after verifying all input data is valid
 exports.createBadgePage = async (req, res) => {
   let userId = req.user.id;
+  let userName = req.user.username;
   let docId;
   let badgeData = {
     title: req.body.title,
@@ -77,7 +100,8 @@ exports.createBadgePage = async (req, res) => {
       general: `Input is not formatted correctly. All must be strings. Also, title and issuer must not be empty.`,
     });
   }
-  valid = badgeData.issuer === userId;
+
+  valid = badgeData.issuer === userName;
   if (!valid) {
     return res.status(400).json({
       general: `You can not issue in someone else's name. Change issuer to your id`,
@@ -94,6 +118,8 @@ exports.createBadgePage = async (req, res) => {
   await db.doc(`/users/${userId}`).update({
     badgesCreated: firestoreRef.FieldValue.arrayUnion(docId),
   });
+
+  badgeData.id = docId;
 
   return res.status(201).send(badgeData);
 };
