@@ -7,8 +7,22 @@ const {
   isValidInteger,
 } = require("../utils/helpers");
 
+/**
+ * Gets public key from BitClout API
+ * req.params.userName must be specified and a valid username or else will return error
+ *
+ * Returns all profile data from BitClout API in format
+ * {
+ *  Profile: {
+ *    Username: "",
+ *    PublicKeybase58Check: ""
+ *  }
+ * }
+ */
 exports.getPublicKey = async (req, res) => {
   let userName = req.params.userName;
+
+  //get bitclout profile info
   const url = `https://bitclout.com/api/v0/get-single-profile`;
   let resData = {};
   await fetch(url, {
@@ -29,6 +43,19 @@ exports.getPublicKey = async (req, res) => {
 
   return res.status(201).json(resData);
 };
+
+/**
+ * Gets username from BitClout API
+ * req.params.publicKey must be specified and a valid public key or else will return error
+ *
+ * Returns all profile data from BitClout API in format
+ * {
+ *  Profile: {
+ *    Username: "",
+ *    PublicKeybase58Check: ""
+ *  }
+ * }
+ */
 exports.getUsername = async (req, res) => {
   let publicKey = req.params.publicKey;
   const url = `https://bitclout.com/api/v0/get-single-profile`;
@@ -53,9 +80,14 @@ exports.getUsername = async (req, res) => {
   return res.status(201).json(resData);
 };
 
+/**
+ * Takes in a user's username and gets all database data for that user
+ */
 exports.getUserInfo = async (req, res) => {
   let userName = req.params.id;
   let userId = null;
+
+  //get public key
   const url = `https://bitclout.com/api/v0/get-single-profile`;
   let resData = {};
   await fetch(url, {
@@ -75,6 +107,7 @@ exports.getUserInfo = async (req, res) => {
       console.error("Error:", error);
     });
 
+  //get user data from databse
   let userData = {};
   await db
     .doc(`/users/${userId}`)
@@ -100,6 +133,7 @@ exports.getUserInfo = async (req, res) => {
       });
     });
 
+  //get user's portfolio pages from database
   await db
     .doc(`/users/${userId}`)
     .collection("portfolioPages")
@@ -121,6 +155,11 @@ exports.getUserInfo = async (req, res) => {
   return res.status(201).json(userData);
 };
 
+/**
+ * Adds a profile page to a user profile
+ *
+ * req.body must specify pageTitle, badges, and pageNum
+ */
 exports.addPage = async (req, res) => {
   let userId = req.user.id;
   let userName = req.user.username;
@@ -130,6 +169,7 @@ exports.addPage = async (req, res) => {
     pageNum: req.body.pageNum,
   };
 
+  //validate all input fields
   let valid = isValidString(newPage.pageTitle);
   if (!valid) {
     return res.status(400).json({
@@ -158,6 +198,7 @@ exports.addPage = async (req, res) => {
     });
   }
 
+  //get all current profile pages
   let currSize;
   let pageData = {};
 
@@ -174,6 +215,7 @@ exports.addPage = async (req, res) => {
       pageData = data;
     })
     .then(async () => {
+      //no duplicate pageTitle allowed
       pageData.forEach((doc) => {
         let docData = doc.data();
         if (docData.pageTitle === newPage.pageTitle) {
@@ -181,6 +223,7 @@ exports.addPage = async (req, res) => {
         }
       });
 
+      //update pageNums for all pages
       pageData.forEach(async (doc) => {
         let docData = doc.data();
         if (docData.pageNum >= newPage.pageNum) {
@@ -191,6 +234,7 @@ exports.addPage = async (req, res) => {
       });
     })
     .then(async () => {
+      //set the new page's info
       await db
         .doc(`/users/${userId}`)
         .collection("portfolioPages")
@@ -208,20 +252,28 @@ exports.addPage = async (req, res) => {
     });
 };
 
+/**
+ * Deletes a page from a user's profile
+ *
+ * req.body.pageNum is page to be deleted;
+ */
 exports.deletePage = (req, res) => {
   let userId = req.user.id;
   let idx = req.body.pageNum;
+  //validate pageNum is an int
   let valid = isValidInteger(idx) && idx >= 0;
   if (!valid) {
     return res.status(400).json({
       general: `pageNum is not a valid number.`,
     });
   }
+  //get all pages and update pageNums accordingly
   db.doc(`/users/${userId}`)
     .collection("portfolioPages")
     .orderBy("pageNum", "desc")
     .get()
     .then(async (data) => {
+      //check if valid index
       currSize = data.size;
       if (idx >= currSize) {
         throw `Error. Page num is >= current size`;

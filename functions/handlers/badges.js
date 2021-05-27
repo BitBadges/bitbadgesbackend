@@ -10,7 +10,11 @@ const {
   isBoolean,
 } = require("../utils/helpers");
 
-//Getter method for a badge
+/**
+ * Getter method for a badge
+ *
+ * id of badge is specified ats req.params.id
+ */
 exports.getBadge = (req, res) => {
   let badgeId = req.params.id;
 
@@ -31,7 +35,14 @@ exports.getBadge = (req, res) => {
     });
 };
 
-//Creates a badge after validating all input is valid
+/**
+ * 1) Validates all req.body info matches badge formatting standards
+ * 2) Uploads to IPFS
+ * 3) Gets hash of IPFS file
+ * 4) Updates issuer and recipients badgesIssued and badgesReceived data in profiles
+ * 5) Uploads badge to database
+ * 6) Posts hash to @BitBadgesHash BitClout account
+ */
 exports.createBadge = async (req, res) => {
   let userId = req.user.id;
   let badgeData = {
@@ -48,6 +59,7 @@ exports.createBadge = async (req, res) => {
     dateCreated: Date.now(),
   };
 
+  //validate all input details
   let valid =
     isValidString(badgeData.title) &&
     isValidString(badgeData.issuer) &&
@@ -90,13 +102,13 @@ exports.createBadge = async (req, res) => {
     badgeData.validDateStart = Date.now();
   }
 
+  //upload to IPFS and get hash
   const { cid } = await client.add(JSON.stringify(badgeData));
   let ipfsHash = cid.toString();
 
   badgeData.id = ipfsHash;
 
-  
-
+  //if recipient doesn't have data in our database, add it
   await db
     .doc(`/users/${badgeData.recipient}`)
     .get()
@@ -113,6 +125,8 @@ exports.createBadge = async (req, res) => {
     });
   }
   console.log(badgeData.issuer);
+
+  //Update issuer and recipients user info and upload badge to database
   Promise.all([
     db.collection(`/badges`).doc(ipfsHash).set(badgeData),
     db.doc(`/users/${badgeData.recipient}`).update({
@@ -123,6 +137,7 @@ exports.createBadge = async (req, res) => {
     }),
   ]);
 
+  //get transactionHex for BitBadgesHash posting bot
   url = `https://bitclout.com/api/v0/submit-post`;
   let transactionHex = null;
   await fetch(url, {
@@ -160,6 +175,7 @@ exports.createBadge = async (req, res) => {
       });
     });
 
+  //sign the transaction using my private API
   url = `https://us-central1-bitbadgespostbot.cloudfunctions.net/api/sign`;
   let signedHex = null;
   await fetch(url, {
@@ -184,6 +200,7 @@ exports.createBadge = async (req, res) => {
       });
     });
 
+  //submit transaction to BitClout chain
   url = `https://bitclout.com/api/v0/submit-transaction`;
   await fetch(url, {
     method: "post",

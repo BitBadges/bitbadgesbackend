@@ -39,7 +39,6 @@ let db = {
   ],
   badgePages: [
     {
-      //all must be strings and title, issuer, backgroundColor are required
       title: "",
       issuer: "",
       preReqs: "",

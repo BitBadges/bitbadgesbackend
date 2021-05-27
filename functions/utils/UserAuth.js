@@ -51,15 +51,21 @@ function validateJwt(bitCloutPublicKey, jwtToken) {
   return result;
 }
 
+/**
+ * 1) Verifies the user through validating the jwt according to the public key
+ * 2) Gets username from BitClout API
+ * 3) Sets req.user = {
+ *  id: "publickey"
+ *  username: "username"
+ * }
+ * 4) Creates account in database if it hasn''t been created yet
+ */
 module.exports = async (req, res, next) => {
-  //get jwt and public token params from headers
+  //get jwt and public token params from body
   let jwt = req.body.jwt;
   let publickey = req.body.publickey;
-  console.log(jwt);
-  console.log(publickey);
 
   if (!jwt || !publickey) {
-    console.log("Couldn't obtain headers");
     return res.status(400).json({
       general: "Error. Could not obtain jwt and publickey headers from request",
     });
@@ -68,15 +74,15 @@ module.exports = async (req, res, next) => {
   //validate Jwt
   const validJwtToken = validateJwt(publickey, jwt);
   if (!validJwtToken) {
-    console.log("Couldn't validate public key");
     return res.status(400).json({
-      general: "Error. Invalid identification. Could not validate public key",
+      general:
+        "Error. Invalid identification. Could not validate jwt with public key.",
     });
   }
 
+  //get user's username from BitClout API
   const url = `https://bitclout.com/api/v0/get-single-profile`;
   let resData = {};
-  console.log({ PublicKeyBase58Check: publickey });
   await fetch(url, {
     method: "post",
     headers: {
@@ -96,12 +102,12 @@ module.exports = async (req, res, next) => {
       });
     });
 
-  //set req.user.id to their BitClout Public Key
+  //set req.user to their BitClout Public Key
   req.user = {};
   req.user.id = publickey;
   req.user.username = resData.Profile.Username;
 
-  //if account hasn't been created, create it
+  //if account hasn't been created already in database, create it
   await db
     .doc(`/users/${req.user.id}`)
     .get()

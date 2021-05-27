@@ -1,6 +1,7 @@
 const { firebaseConfig } = require("firebase-functions");
 const { db, firestoreRef } = require("../utils/admin");
 const { isValidString, isString } = require("../utils/helpers");
+
 //Getter method for all badge pages
 exports.getAllBadgePages = async (req, res) => {
   let badgePages = [];
@@ -24,7 +25,11 @@ exports.getAllBadgePages = async (req, res) => {
   return res.status(201).json(badgePages);
 };
 
-//Getter method for a single specified badge page
+/**
+ * Getter method for a single specified badge page
+ *
+ * req.params.id specifies the id of badgePage
+ */
 exports.getBadgePage = (req, res) => {
   let badgeId = req.params.id;
 
@@ -45,7 +50,9 @@ exports.getBadgePage = (req, res) => {
     });
 };
 
-//Deletes a badge page
+/**
+ * Deletes a badge page with id of req.params.id and removes id from user's badgesCreated
+ */
 exports.deleteBadgePage = (req, res) => {
   let badgeId = req.params.id;
   let userId = req.user.id;
@@ -70,7 +77,11 @@ exports.deleteBadgePage = (req, res) => {
   });
 };
 
-//Creates a new badge page after verifying all input data is valid
+/**
+ * 1) Validates all badge page info is formatted correctly
+ * 2) Uploads badge page
+ * 3) Updates user info to add id to badgesCreated field
+ */
 exports.createBadgePage = async (req, res) => {
   let userId = req.user.id;
   let userName = req.user.username;
@@ -86,6 +97,7 @@ exports.createBadgePage = async (req, res) => {
     backgroundColor: req.body.backgroundColor,
   };
 
+  //validates all user info
   let valid =
     isValidString(badgeData.title) &&
     isValidString(badgeData.issuer) &&
@@ -108,6 +120,7 @@ exports.createBadgePage = async (req, res) => {
     });
   }
 
+  //uploads badge to database
   await db
     .collection(`/badgePages`)
     .add(badgeData)
@@ -115,6 +128,7 @@ exports.createBadgePage = async (req, res) => {
       docId = doc.id;
     });
 
+  //update user's badgesCreated
   await db.doc(`/users/${userId}`).update({
     badgesCreated: firestoreRef.FieldValue.arrayUnion(docId),
   });
