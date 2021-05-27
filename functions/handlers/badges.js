@@ -63,7 +63,7 @@ exports.createBadge = async (req, res) => {
     });
   }
 
-  valid = req.user.username === badgeData.issuer;
+  valid = req.user.id === badgeData.issuer;
   if (!valid) {
     return res.status(400).json({
       general: `You can not issue in someone else's name. Change issuer to your id`,
@@ -95,32 +95,10 @@ exports.createBadge = async (req, res) => {
 
   badgeData.id = ipfsHash;
 
-  //get recipient publicKe
-  let recipientPublicKey = null;
-  let url = `https://bitclout.com/api/v0/get-single-profile`;
-  let resData = {};
-  console.log({ PublicKeyBase58Check: userId });
-  await fetch(url, {
-    method: "post",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ Username: badgeData.recipient }),
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      resData = data;
-      recipientPublicKey = data.Profile.PublicKeyBase58Check;
-    })
-    .catch((error) => {
-      return res.status(400).json({
-        general: "Could not get public key for recipient's username",
-        error: error,
-      });
-    });
+  
 
   await db
-    .doc(`/users/${recipientPublicKey}`)
+    .doc(`/users/${badgeData.recipient}`)
     .get()
     .then((doc) => {
       if (!doc.exists) {
@@ -128,7 +106,7 @@ exports.createBadge = async (req, res) => {
       }
     });
   if (!valid) {
-    await db.doc(`/users/${recipientPublicKey}`).set({
+    await db.doc(`/users/${badgeData.recipient}`).set({
       badgesIssued: [],
       badgesReceived: [],
       badgesCreated: [],
@@ -137,7 +115,7 @@ exports.createBadge = async (req, res) => {
   console.log(badgeData.issuer);
   Promise.all([
     db.collection(`/badges`).doc(ipfsHash).set(badgeData),
-    db.doc(`/users/${recipientPublicKey}`).update({
+    db.doc(`/users/${badgeData.recipient}`).update({
       badgesReceived: firestoreRef.FieldValue.arrayUnion(ipfsHash),
     }),
     db.doc(`/users/${userId}`).update({

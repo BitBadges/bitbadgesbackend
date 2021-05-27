@@ -101,7 +101,7 @@ exports.createBadgePage = async (req, res) => {
     });
   }
 
-  valid = badgeData.issuer === userName;
+  valid = badgeData.issuer === userId;
   if (!valid) {
     return res.status(400).json({
       general: `You can not issue in someone else's name. Change issuer to your id`,
