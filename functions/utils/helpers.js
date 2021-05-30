@@ -20,6 +20,16 @@ exports.isBoolean = (bool) => {
   return isBool(bool);
 };
 
+exports.isValidStringArray = async (array) => {
+  let valid = true;
+  array.forEach((str) => {
+    if (!this.isString(str)) {
+      valid = false;
+    }
+  });
+  return valid;
+};
+
 exports.isValidBadgeArray = async (badges, userId) => {
   let userReceivedBadges = [];
 

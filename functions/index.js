@@ -10,6 +10,7 @@ const {
   getUserInfo,
   getUsername,
   getPublicKey,
+  getHodlers,
 } = require("./handlers/users");
 
 const { getBadge, createBadge } = require("./handlers/badges");
@@ -33,6 +34,8 @@ app.get("/badgePages/:id", getBadgePage);
 app.get("/badgePages", getAllBadgePages);
 app.get("/username/:publicKey", getUsername);
 app.get("/publicKey/:userName", getPublicKey);
+
+app.post("/hodlers", getHodlers);
 
 /**
  * Issues a badge from current user to a seleted recipient

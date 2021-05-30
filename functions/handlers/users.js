@@ -44,6 +44,34 @@ exports.getPublicKey = async (req, res) => {
   return res.status(201).json(resData);
 };
 
+exports.getHodlers = async (req, res) => {
+  //get bitclout profile info
+  const url = `https://bitclout.com/api/v0/get-hodlers-for-public-key`;
+  let resData = {};
+  console.log("UName", req.body.Username);
+  console.log("Num", req.body.NumToFetch);
+  await fetch(url, {
+    method: "post",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      Username: req.body.Username,
+      NumToFetch: req.body.NumToFetch,
+    }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      resData = data;
+      console.log("Success:", data);
+    })
+    .catch((error) => {
+      return res.status(400).json(error);
+    });
+
+  return res.status(201).json(resData);
+};
+
 /**
  * Gets username from BitClout API
  * req.params.publicKey must be specified and a valid public key or else will return error
@@ -87,6 +115,12 @@ exports.getUserInfo = async (req, res) => {
   let userName = req.params.id;
   let userId = null;
 
+  if (!userName) {
+    return res.status(400).json({
+      general: "No username parameter entered!",
+    });
+  }
+
   //get public key
   const url = `https://bitclout.com/api/v0/get-single-profile`;
   let resData = {};
@@ -107,7 +141,7 @@ exports.getUserInfo = async (req, res) => {
       console.error("Error:", error);
     });
 
-  //get user data from databse
+  //get user data from database
   let userData = {};
   await db
     .doc(`/users/${userId}`)
@@ -123,8 +157,9 @@ exports.getUserInfo = async (req, res) => {
 
         blankTemplate.portfolioPages = [];
         return res.status(201).json(blankTemplate);
+      } else {
+        userData = doc.data();
       }
-      userData = doc.data();
     })
     .catch((err) => {
       console.error(err);
@@ -163,10 +198,12 @@ exports.getUserInfo = async (req, res) => {
 exports.addPage = async (req, res) => {
   let userId = req.user.id;
   let userName = req.user.username;
+
   let newPage = {
     pageTitle: req.body.pageTitle,
     badges: req.body.badges,
     pageNum: req.body.pageNum,
+    description: req.body.description,
   };
 
   //validate all input fields
@@ -177,12 +214,16 @@ exports.addPage = async (req, res) => {
     });
   }
 
-  valid = isValidString(newPage.pageTitle);
+  if (!newPage.description) {
+    newPage.description = "";
+  }
+  valid = isValidString(newPage.description);
   if (!valid) {
     return res.status(400).json({
-      general: `Please enter a valid string for the page title`,
+      general: `Please enter a valid string for the description`,
     });
   }
+
 
   valid = await isValidBadgeArray(newPage.badges, userId);
   if (!valid) {
@@ -194,7 +235,7 @@ exports.addPage = async (req, res) => {
   valid = isValidInteger(newPage.pageNum) && newPage.pageNum >= 0;
   if (!valid) {
     return res.status(400).json({
-      general: `pageNum is not a valid number.`,
+      general: `pageNum is not a valid number. Must be an integer greater than or equal to zero.`,
     });
   }
 
@@ -210,7 +251,7 @@ exports.addPage = async (req, res) => {
       currSize = data.size;
       pageData = data;
       if (newPage.pageNum > currSize) {
-        throw `Error. Page num is greater than current size`;
+        throw `Error. Page num is greater than number of current pages`;
       }
       pageData = data;
     })
@@ -260,6 +301,7 @@ exports.addPage = async (req, res) => {
 exports.deletePage = (req, res) => {
   let userId = req.user.id;
   let idx = req.body.pageNum;
+
   //validate pageNum is an int
   let valid = isValidInteger(idx) && idx >= 0;
   if (!valid) {
@@ -267,6 +309,7 @@ exports.deletePage = (req, res) => {
       general: `pageNum is not a valid number.`,
     });
   }
+  
   //get all pages and update pageNums accordingly
   db.doc(`/users/${userId}`)
     .collection("portfolioPages")

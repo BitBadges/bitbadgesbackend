@@ -8,6 +8,7 @@ const {
   isString,
   isValidInteger,
   isBoolean,
+  isValidStringArray,
 } = require("../utils/helpers");
 
 /**
@@ -48,7 +49,7 @@ exports.createBadge = async (req, res) => {
   let badgeData = {
     title: req.body.title,
     issuer: req.body.issuer,
-    recipient: req.body.recipient,
+    recipients: req.body.recipients,
     description: req.body.description,
     imageUrl: req.body.imageUrl,
     validDates: req.body.validDates,
@@ -63,15 +64,21 @@ exports.createBadge = async (req, res) => {
   let valid =
     isValidString(badgeData.title) &&
     isValidString(badgeData.issuer) &&
-    isValidString(badgeData.recipient) &&
-    isValidString(badgeData.backgroundColor) &&
+    isValidStringArray(badgeData.recipients) &&
+    isString(badgeData.backgroundColor) &&
     isString(badgeData.description) &&
     isString(badgeData.externalUrl) &&
     isString(badgeData.imageUrl);
 
+  if (!badgeData.recipients || badgeData.recipients.length <= 0) {
+    return res.status(400).json({
+      general: `There must be at least one recipient.`,
+    });
+  }
+
   if (!valid) {
     return res.status(400).json({
-      general: `String inputs are not formatted correctly`,
+      general: `String inputs are not formatted correctly. Title and issuer are required not to be empty and all else must be valid strings.`,
     });
   }
 
@@ -88,6 +95,7 @@ exports.createBadge = async (req, res) => {
       general: `validDates must be a boolean.`,
     });
   }
+
   if (badgeData.validDates) {
     valid =
       isValidInteger(badgeData.validDateStart) &&
@@ -98,40 +106,47 @@ exports.createBadge = async (req, res) => {
       });
     }
   } else {
+    //make badge valid forever
     badgeData.validDateEnd = 8640000000000000;
     badgeData.validDateStart = Date.now();
   }
 
   //upload to IPFS and get hash
-  const { cid } = await client.add(JSON.stringify(badgeData));
+  const { cid } = await client.add(JSON.stringify(badgeData)).catch((err) => {
+    return res
+      .status(400)
+      .json({ general: "Could not upload to IPFS.", error: err });
+  });
   let ipfsHash = cid.toString();
 
   badgeData.id = ipfsHash;
 
   //if recipient doesn't have data in our database, add it
-  await db
-    .doc(`/users/${badgeData.recipient}`)
-    .get()
-    .then((doc) => {
-      if (!doc.exists) {
-        valid = false;
-      }
-    });
-  if (!valid) {
-    await db.doc(`/users/${badgeData.recipient}`).set({
-      badgesIssued: [],
-      badgesReceived: [],
-      badgesCreated: [],
-    });
-  }
-  console.log(badgeData.issuer);
+  badgeData.recipients.forEach(async (recipient) => {
+    await db
+      .doc(`/users/${recipient}`)
+      .get()
+      .then((doc) => {
+        if (!doc.exists) {
+          valid = false;
+        }
+      });
+    if (!valid) {
+      await db.doc(`/users/${recipient}`).set({
+        badgesIssued: [],
+        badgesReceived: [ipfsHash],
+        badgesCreated: [],
+      });
+    } else {
+      await db.doc(`/users/${recipient}`).update({
+        badgesReceived: firestoreRef.FieldValue.arrayUnion(ipfsHash),
+      });
+    }
+  });
 
   //Update issuer and recipients user info and upload badge to database
   Promise.all([
     db.collection(`/badges`).doc(ipfsHash).set(badgeData),
-    db.doc(`/users/${badgeData.recipient}`).update({
-      badgesReceived: firestoreRef.FieldValue.arrayUnion(ipfsHash),
-    }),
     db.doc(`/users/${userId}`).update({
       badgesIssued: firestoreRef.FieldValue.arrayUnion(ipfsHash),
     }),

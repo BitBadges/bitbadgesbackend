@@ -101,7 +101,7 @@ exports.createBadgePage = async (req, res) => {
   let valid =
     isValidString(badgeData.title) &&
     isValidString(badgeData.issuer) &&
-    isValidString(badgeData.backgroundColor) &&
+    isString(badgeData.backgroundColor) &&
     isString(badgeData.preReqs) &&
     isString(badgeData.validity) &&
     isString(badgeData.description) &&
@@ -109,7 +109,7 @@ exports.createBadgePage = async (req, res) => {
     isString(badgeData.imageUrl);
   if (!valid) {
     return res.status(400).json({
-      general: `Input is not formatted correctly. All must be strings. Also, title and issuer must not be empty.`,
+      general: `Input is not formatted correctly. All must be strings, and title and issuer must not be empty.`,
     });
   }
 
