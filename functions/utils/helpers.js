@@ -5,6 +5,24 @@ const isStr = (val) => typeof val === "string";
 const isEmpty = (string) => {
   return string.trim() === "";
 };
+exports.isColor = (strColor) => {
+  const s = new Option().style;
+  s.color = strColor;
+  return s.color !== "";
+};
+
+exports.isURL = (str) => {
+  var pattern = new RegExp(
+    "^(https?:\\/\\/)?" + // protocol
+      "((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|" + // domain name
+      "((\\d{1,3}\\.){3}\\d{1,3}))" + // OR ip (v4) address
+      "(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*" + // port and path
+      "(\\?[;&a-z\\d%_.~+=-]*)?" + // query string
+      "(\\#[-a-z\\d_]*)?$",
+    "i"
+  ); // fragment locator
+  return !!pattern.test(str);
+};
 
 const isNumber = (val) => typeof val === "number" && val === val;
 const isBool = (val) => typeof val === "boolean";
@@ -55,4 +73,17 @@ exports.isValidBadgeArray = async (badges, userId) => {
 
 exports.isValidInteger = (num) => {
   return isNumber(num) && Number.isInteger(num);
+};
+
+exports.uvarint64ToBuf = (uint) => {
+  const result = [];
+
+  while (uint >= 0x80) {
+    result.push((uint & 0xff) | 0x80);
+    uint >>>= 7;
+  }
+
+  result.push(uint | 0);
+
+  return new Buffer(result);
 };

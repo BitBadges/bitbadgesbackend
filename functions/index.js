@@ -22,8 +22,9 @@ const {
   deleteBadgePage,
 } = require("./handlers/badgePages");
 
+const BadgePaywall = require("./utils/BadgePaywall");
 const UserAuth = require("./utils/UserAuth");
-
+const getFeeTransaction = require("./utils/getFeeTxn");
 /**
  * Getter methods for all values in the database - look at dbschema.js for return formats of each function
  */
@@ -34,6 +35,8 @@ app.get("/badgePages/:id", getBadgePage);
 app.get("/badgePages", getAllBadgePages);
 app.get("/username/:publicKey", getUsername);
 app.get("/publicKey/:userName", getPublicKey);
+
+app.get("/feeTxn/:senderKey/:numRecipients", getFeeTransaction);
 
 app.post("/hodlers", getHodlers);
 
@@ -46,7 +49,7 @@ app.post("/hodlers", getHodlers);
  *
  * Will also post on BitClout a hash of the IPFS Id with issuer and receiver to be stored on the BitClout chain
  */
-app.post("/badges", UserAuth, createBadge);
+app.post("/badges", UserAuth, BadgePaywall, createBadge);
 
 /**
  * Issues a badge page with current user as the recipient

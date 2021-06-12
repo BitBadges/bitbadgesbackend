@@ -9,6 +9,9 @@ const {
   isValidInteger,
   isBoolean,
   isValidStringArray,
+  uvarint64ToBuf,
+  isColor,
+  isURL,
 } = require("../utils/helpers");
 
 /**
@@ -46,6 +49,76 @@ exports.getBadge = (req, res) => {
  */
 exports.createBadge = async (req, res) => {
   let userId = req.user.id;
+  let signedTransactionHex = req.body.signedTransactionHex;
+  let amountNanos = req.body.amountNanos;
+  if (!signedTransactionHex || !amountNanos) {
+    return res
+      .status(400)
+      .json({ general: "Please specify signedTransactionHex and amountNanos" });
+  }
+
+  req.body.recipients = [...new Set(req.body.recipients)];
+
+  let ratePerRecipient = 500000;
+  let numRecipients = req.body.recipients.length;
+  let minPrice = numRecipients * ratePerRecipient;
+  if (amountNanos < minPrice) {
+    return res.status(400).json({
+      general: `amountNanos is not enough. Must be at least ${minPrice} for ${numRecipients} recipients`,
+    });
+  }
+
+  //check if valid hex
+  let hexLen = signedTransactionHex.length;
+
+  if (hexLen <= 2) {
+    return res.status(400).json({
+      general: "Invalid signed transaction hex: Not long enough to be valid",
+    });
+  }
+  let inputTxnLen = "0x" + signedTransactionHex.substring(0, 2);
+  inputTxnLen = parseInt(inputTxnLen, 16);
+  if (isNaN(inputTxnLen)) {
+    return res
+      .status(400)
+      .json({ general: "Invalid transaction hex: InputTxnLen not a number" });
+  }
+
+  let outputTxnLenIdx = 2 + 66 * inputTxnLen;
+  let recipientPublicKeyIdx = outputTxnLenIdx + 2;
+  let recipientAmountNanosIdx = recipientPublicKeyIdx + 66;
+
+  let nanoBytes = uvarint64ToBuf(amountNanos).toString("hex");
+  if (nanoBytes.length + recipientAmountNanosIdx > hexLen) {
+    return res.status(400).json({
+      general: "Invalid signed transaction hex: Not long enough to be valid",
+    });
+  }
+
+  let recipientPublicKey = signedTransactionHex.substring(
+    recipientPublicKeyIdx,
+    recipientPublicKeyIdx + 66
+  );
+  if (
+    recipientPublicKey !=
+    "02b6e2717127e11282ccdee91e176381a25f1114f2e21d994e14beda538e303698"
+  ) {
+    return res.status(400).json({
+      general:
+        "Invalid recipient: recipient of transaction must be @BitBadges account",
+    });
+  }
+
+  if (
+    !signedTransactionHex
+      .substring(recipientAmountNanosIdx)
+      .startsWith(nanoBytes)
+  ) {
+    return res.status(400).json({
+      general: "Invalid signed transaction hex: amountNanos does not match",
+    });
+  }
+
   let badgeData = {
     title: req.body.title,
     issuer: req.body.issuer,
@@ -66,9 +139,11 @@ exports.createBadge = async (req, res) => {
     isValidString(badgeData.issuer) &&
     isValidStringArray(badgeData.recipients) &&
     isString(badgeData.backgroundColor) &&
+    isColor(badgeData.backgroundColor) &&
     isString(badgeData.description) &&
     isString(badgeData.externalUrl) &&
-    isString(badgeData.imageUrl);
+    isURL(badgeData.externalUrl);
+  isString(badgeData.imageUrl) && isURL(badgeData.imageUrl);
 
   if (!badgeData.recipients || badgeData.recipients.length <= 0) {
     return res.status(400).json({
@@ -78,7 +153,7 @@ exports.createBadge = async (req, res) => {
 
   if (!valid) {
     return res.status(400).json({
-      general: `String inputs are not formatted correctly. Title and issuer are required not to be empty and all else must be valid strings.`,
+      general: `String inputs are not formatted correctly. Title and issuer are required not to be empty and all else must be valid strings. Background color must be a valid HTML color property. URLs must be in a valid URL format`,
     });
   }
 
@@ -121,8 +196,33 @@ exports.createBadge = async (req, res) => {
 
   badgeData.id = ipfsHash;
 
+  //submit payment transaction to BitClout chain
+  let url = `https://bitclout.com/api/v0/submit-transaction`;
+  await fetch(url, {
+    method: "post",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      TransactionHex: signedTransactionHex,
+    }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.error) {
+        throw "Payment transaction failed";
+      }
+      console.log(data);
+    })
+    .catch((error) => {
+      //should never reach here
+      return res.status(400).json({
+        general: "ERROR: Payment transaction never went through!",
+      });
+    });
+
   //if recipient doesn't have data in our database, add it
-  badgeData.recipients.forEach(async (recipient) => {
+  await badgeData.recipients.forEach(async (recipient) => {
     await db
       .doc(`/users/${recipient}`)
       .get()
