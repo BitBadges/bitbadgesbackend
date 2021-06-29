@@ -93,7 +93,7 @@ module.exports = async (req, res, next) => {
     .then((response) => response.json())
     .then((data) => {
       resData = data;
-      console.log("Success:", data);
+      //console.log("Success:", data);
     })
     .catch((error) => {
       console.error("Error:", error);
@@ -120,6 +120,8 @@ module.exports = async (req, res, next) => {
         };
         await db.doc(`/users/${req.user.id}`).set(blankTemplate);
       }
+
+      next();
     })
     .catch((err) => {
       console.error(err);
@@ -127,5 +129,4 @@ module.exports = async (req, res, next) => {
         general: `Could not create ${req.user.id}'s data in our database.`,
       });
     });
-  next();
 };

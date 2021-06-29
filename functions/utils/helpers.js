@@ -5,10 +5,11 @@ const isStr = (val) => typeof val === "string";
 const isEmpty = (string) => {
   return string.trim() === "";
 };
+
 exports.isColor = (strColor) => {
-  const s = new Option().style;
-  s.color = strColor;
-  return s.color !== "";
+  //TODO:
+
+  return true;
 };
 
 exports.isURL = (str) => {
@@ -38,7 +39,7 @@ exports.isBoolean = (bool) => {
   return isBool(bool);
 };
 
-exports.isValidStringArray = async (array) => {
+exports.isValidStringArray = (array) => {
   let valid = true;
   array.forEach((str) => {
     if (!this.isString(str)) {

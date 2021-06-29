@@ -37,7 +37,9 @@ module.exports = async (req, res, next) => {
         });
       }
 
-      console.log("Success:", data);
+      // console.log("Success:", data);
+
+      next();
     })
     .catch((error) => {
       console.error("Error:", error);
@@ -45,6 +47,4 @@ module.exports = async (req, res, next) => {
         general: "Error. Could not get username for public key",
       });
     });
-
-  next();
 };

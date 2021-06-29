@@ -35,7 +35,7 @@ exports.getPublicKey = async (req, res) => {
     .then((response) => response.json())
     .then((data) => {
       resData = data;
-      console.log("Success:", data);
+      // console.log("Success:", data);
     })
     .catch((error) => {
       console.error("Error:", error);
@@ -224,7 +224,6 @@ exports.addPage = async (req, res) => {
     });
   }
 
-
   valid = await isValidBadgeArray(newPage.badges, userId);
   if (!valid) {
     return res.status(400).json({
@@ -309,7 +308,7 @@ exports.deletePage = (req, res) => {
       general: `pageNum is not a valid number.`,
     });
   }
-  
+
   //get all pages and update pageNums accordingly
   db.doc(`/users/${userId}`)
     .collection("portfolioPages")
