@@ -7,7 +7,7 @@ module.exports = async (req, res, next) => {
   let senderPublicKey = req.params.senderKey;
   let numRecipients = Number(req.params.numRecipients);
 
-  if (!numRecipients || !senderPublicKey || isNaN(numRecipients)) {
+  if (!numRecipients || !senderPublicKey || isNaN(numRecipients) || numRecipients < 0) {
     return res.status(400).json({ general: "Params are invalid" });
   }
 
@@ -35,7 +35,7 @@ module.exports = async (req, res, next) => {
       }
       let transactionHex = data.TransactionHex;
 
-      return res.status(201).json({
+      return res.status(200).json({
         TransactionHex: transactionHex,
         amountNanos: data.SpendAmountNanos,
       });

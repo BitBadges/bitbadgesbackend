@@ -27,7 +27,7 @@ exports.getBadge = async (req, res) => {
     .get()
     .then((doc) => {
       if (doc.exists) {
-        return res.status(201).json(doc.data());
+        return res.status(200).json(doc.data());
       }
     })
     .catch((err) => {
@@ -82,7 +82,7 @@ exports.getBadge = async (req, res) => {
       });
     });
 
-  return res.status(201).json(badges);
+  return res.status(200).json({ badges });
 };
 
 /**
@@ -288,10 +288,13 @@ exports.createBadge = async (req, res) => {
         badgesIssued: [],
         badgesReceived: [ipfsHash],
         badgesCreated: [],
+        badgesPending: [ipfsHash],
+        badgesAccepted: [],
       });
     } else {
       await db.doc(`/users/${recipient}`).update({
         badgesReceived: firestoreRef.FieldValue.arrayUnion(ipfsHash),
+        badgesPending: firestoreRef.FieldValue.arrayUnion(ipfsHash),
       });
     }
   });
@@ -386,5 +389,5 @@ exports.createBadge = async (req, res) => {
     });
   });
 
-  return res.status(201).send(badgeData);
+  return res.status(200).json(badgeData);
 };

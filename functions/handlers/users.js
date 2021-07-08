@@ -41,7 +41,7 @@ exports.getPublicKey = async (req, res) => {
       console.error("Error:", error);
     });
 
-  return res.status(201).json(resData);
+  return res.status(200).json(resData);
 };
 
 exports.getHodlers = async (req, res) => {
@@ -69,7 +69,7 @@ exports.getHodlers = async (req, res) => {
       return res.status(400).json(error);
     });
 
-  return res.status(201).json(resData);
+  return res.status(200).json(resData);
 };
 
 /**
@@ -105,7 +105,7 @@ exports.getUsername = async (req, res) => {
       console.error("Error:", error);
     });
 
-  return res.status(201).json(resData);
+  return res.status(200).json(resData);
 };
 
 /**
@@ -135,7 +135,6 @@ exports.getUserInfo = async (req, res) => {
     .then((data) => {
       resData = data;
       userId = data.Profile.PublicKeyBase58Check;
-      console.log("Success:", data);
     })
     .catch((error) => {
       console.error("Error:", error);
@@ -143,20 +142,20 @@ exports.getUserInfo = async (req, res) => {
 
   //get user data from database
   let userData = {};
+  let newUser = false;
+  const blankTemplate = {
+    badgesIssued: [],
+    badgesReceived: [],
+    badgesCreated: [],
+    badgesAccepted: [],
+    badgesPending: [],
+  };
   await db
     .doc(`/users/${userId}`)
     .get()
-    .then(async (doc) => {
+    .then((doc) => {
       if (!doc.exists) {
-        const blankTemplate = {
-          badgesIssued: [],
-          badgesReceived: [],
-          badgesCreated: [],
-        };
-        await db.doc(`/users/${userId}`).set(blankTemplate);
-
-        blankTemplate.portfolioPages = [];
-        return res.status(201).json(blankTemplate);
+        newUser = true;
       } else {
         userData = doc.data();
       }
@@ -168,6 +167,11 @@ exports.getUserInfo = async (req, res) => {
       });
     });
 
+  if (newUser) {
+    await db.doc(`/users/${userId}`).set(blankTemplate);
+    blankTemplate.portfolioPages = [];
+    return res.status(200).json(blankTemplate);
+  }
   //get user's portfolio pages from database
   await db
     .doc(`/users/${userId}`)
@@ -187,7 +191,82 @@ exports.getUserInfo = async (req, res) => {
       });
     });
 
-  return res.status(201).json(userData);
+  return res.status(200).json(userData);
+};
+
+/**
+ * Adds a profile page to a user profile
+ *
+ * req.body must specify pageTitle, badges, and pageNum
+ */
+exports.acceptBadge = async (req, res) => {
+  let userId = req.user.id;
+  let userName = req.user.username;
+
+  let badgeId = req.body.badgeId;
+
+  //validate all input fields
+  let valid = isValidString(badgeId);
+  if (!valid) {
+    return res.status(400).json({
+      general: `Please enter a valid string for the badge id`,
+    });
+  }
+  await db
+    .doc(`/users/${userId}`)
+    .get()
+    .then(async (doc) => {
+      if (doc.data().badgesPending.includes(badgeId)) {
+        await db.doc(`/users/${userId}`).update({
+          badgesPending: firestoreRef.FieldValue.arrayRemove(badgeId),
+          badgesAccepted: firestoreRef.FieldValue.arrayUnion(badgeId),
+        });
+        return res.status(200).json({
+          general: `Success. Accepted badge ${badgeId}`,
+        });
+      } else {
+        return res.status(200).json({
+          general: `Error. ${badgeId} not in pending array`,
+        });
+      }
+    });
+};
+
+/**
+ * Adds a profile page to a user profile
+ *
+ * req.body must specify pageTitle, badges, and pageNum
+ */
+exports.declineBadge = async (req, res) => {
+  let userId = req.user.id;
+  let userName = req.user.username;
+
+  let badgeId = req.body.badgeId;
+
+  //validate all input fields
+  let valid = isValidString(badgeId);
+  if (!valid) {
+    return res.status(400).json({
+      general: `Please enter a valid string for the badge id`,
+    });
+  }
+  await db
+    .doc(`/users/${userId}`)
+    .get()
+    .then(async (doc) => {
+      if (doc.data().badgesPending.includes(badgeId)) {
+        await db.doc(`/users/${userId}`).update({
+          badgesPending: firestoreRef.FieldValue.arrayRemove(badgeId),
+        });
+        return res.status(200).json({
+          general: `Success. Declined badge ${badgeId}`,
+        });
+      } else {
+        return res.status(200).json({
+          general: `Error. ${badgeId} not in pending array`,
+        });
+      }
+    });
 };
 
 /**
@@ -281,7 +360,7 @@ exports.addPage = async (req, res) => {
         .doc(newPage.pageTitle)
         .set(newPage);
 
-      return res.status(201).json(newPage);
+      return res.status(200).json(newPage);
     })
     .catch((err) => {
       console.error(err);
@@ -332,7 +411,7 @@ exports.deletePage = (req, res) => {
         }
       });
 
-      return res.status(201).json({
+      return res.status(200).json({
         general: `Page number ${idx} has been successfully removed!`,
       });
     })

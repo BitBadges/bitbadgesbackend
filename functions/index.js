@@ -11,6 +11,8 @@ const {
   getUsername,
   getPublicKey,
   getHodlers,
+  acceptBadge,
+  declineBadge,
 } = require("./handlers/users");
 
 const { getBadge, createBadge } = require("./handlers/badges");
@@ -40,6 +42,9 @@ app.get("/feeTxn/:senderKey/:numRecipients", getFeeTransaction);
 
 app.post("/hodlers", getHodlers);
 
+app.post("/acceptBadge", UserAuth, acceptBadge);
+app.post("/declineBadge", UserAuth, declineBadge);
+
 /**
  * Issues a badge from current user to a seleted recipient
  *
@@ -49,7 +54,7 @@ app.post("/hodlers", getHodlers);
  *
  * Will also post on BitClout a hash of the IPFS Id with issuer and receiver to be stored on the BitClout chain
  */
-app.post("/badges", UserAuth, BadgePaywall, createBadge);
+app.post("/badges", UserAuth, createBadge);
 
 /**
  * Issues a badge page with current user as the recipient
@@ -59,6 +64,7 @@ app.post("/badges", UserAuth, BadgePaywall, createBadge);
  * Will append newly created id to the currentUser's badgesCreated array
  */
 app.post("/badgePages", UserAuth, createBadgePage);
+
 /**
  * Deletes specified badge page of the current user by id from both badgePages array and user's badgesCreated array
  */

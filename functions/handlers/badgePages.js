@@ -22,7 +22,7 @@ exports.getAllBadgePages = async (req, res) => {
       });
     });
 
-  return res.status(201).json(badgePages);
+  return res.status(200).json(badgePages);
 };
 
 /**
@@ -39,7 +39,7 @@ exports.getBadgePage = (req, res) => {
       if (!doc.exists) {
         throw "Doc doesn't exist";
       }
-      return res.status(201).json(doc.data());
+      return res.status(200).json(doc.data());
     })
     .catch((err) => {
       console.error(err);
@@ -135,5 +135,5 @@ exports.createBadgePage = async (req, res) => {
 
   badgeData.id = docId;
 
-  return res.status(201).send(badgeData);
+  return res.status(200).send(badgeData);
 };
