@@ -275,15 +275,16 @@ exports.createBadge = async (req, res) => {
 
   //if recipient doesn't have data in our database, add it
   await badgeData.recipients.forEach(async (recipient) => {
+    let recipientIsValid = true;
     await db
       .doc(`/users/${recipient}`)
       .get()
       .then((doc) => {
         if (!doc.exists) {
-          valid = false;
+          recipientIsValid = false;
         }
       });
-    if (!valid) {
+    if (!recipientIsValid) {
       await db.doc(`/users/${recipient}`).set({
         badgesIssued: [],
         badgesReceived: [ipfsHash],

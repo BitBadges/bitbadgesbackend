@@ -225,7 +225,7 @@ exports.acceptBadge = async (req, res) => {
           general: `Success. Accepted badge ${badgeId}`,
         });
       } else {
-        return res.status(200).json({
+        return res.status(400).json({
           general: `Error. ${badgeId} not in pending array`,
         });
       }
@@ -262,7 +262,7 @@ exports.declineBadge = async (req, res) => {
           general: `Success. Declined badge ${badgeId}`,
         });
       } else {
-        return res.status(200).json({
+        return res.status(400).json({
           general: `Error. ${badgeId} not in pending array`,
         });
       }
