@@ -1,3 +1,9 @@
-# bitbadgesbackend
+<p align="left">
+  <a href="https://bitbadges.web.app">
+    <img src="https://raw.githubusercontent.com/Mentors4EDU/Images/master/Untitled%20design(457).png" width="250" alt="BitBadges">
+  </a>
+</p>
 
-Link to documentation: https://trevormil.gitbook.io/bitbadges/
+# BitBadges Backend
+
+Link to documentation: https://mentors4edu.gitbook.io/bitbadges
