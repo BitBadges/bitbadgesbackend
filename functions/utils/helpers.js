@@ -8,7 +8,6 @@ const isEmpty = (string) => {
 
 exports.isColor = (strColor) => {
   //TODO:
-
   return true;
 };
 

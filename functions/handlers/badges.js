@@ -1,7 +1,7 @@
-const { db, firestoreRef } = require("../utils/admin");
-const { create } = require("ipfs-http-client");
-const client = create("https://ipfs.infura.io:5001");
-const fetch = require("node-fetch");
+const { db, firestoreRef } = require('../utils/admin');
+const { create } = require('ipfs-http-client');
+const client = create('https://ipfs.infura.io:5001');
+const fetch = require('node-fetch');
 
 const {
   isValidString,
@@ -12,7 +12,38 @@ const {
   uvarint64ToBuf,
   isColor,
   isURL,
-} = require("../utils/helpers");
+} = require('../utils/helpers');
+
+exports.getBadges = async (req, res) => {
+  let badgeIds = req.body.badgeIds;
+  if (!req.body.badgeIds || req.body.badgeIds.length == 0) {
+    return res.status(200).json({ badges: [] });
+  }
+
+  let badges = [];
+  let idMap = new Set();
+
+  await db
+    .collection('badges')
+    .get()
+    .then((querySnapshot) => {
+      querySnapshot.forEach((doc) => {
+        if (badgeIds.includes(doc.data().id) && !idMap.has(doc.id)) {
+          idMap.add(doc.id);
+          badges.push(doc.data());
+        }
+      });
+    })
+    .catch((err) => {
+      console.error(err);
+      return res.status(400).json({
+        general: `Error. Could not get badges : ${badgeIds.toString()}`,
+        error: err,
+      });
+    });
+
+  return res.status(200).json({ badges });
+};
 
 /**
  * Getter method for a badge
@@ -37,52 +68,6 @@ exports.getBadge = async (req, res) => {
         error: err,
       });
     });
-
-  let userName = req.params.id;
-  let badges = [];
-  let idMap = new Set();
-
-  await db
-    .collection("badges")
-    .where("recipients", "array-contains", req.params.id)
-    .get()
-    .then((querySnapshot) => {
-      querySnapshot.forEach((doc) => {
-        if (!idMap.has(doc.id)) {
-          idMap.add(doc.id);
-          badges.push(doc.data());
-        }
-      });
-    })
-    .catch((err) => {
-      console.error(err);
-      return res.status(400).json({
-        general: `Error. Could not get badges for username/public key: ${badgeId}`,
-        error: err,
-      });
-    });
-
-  await db
-    .collection("badges")
-    .where("issuer", "==", req.params.id)
-    .get()
-    .then((querySnapshot) => {
-      querySnapshot.forEach((doc) => {
-        if (!idMap.has(doc.id)) {
-          idMap.add(doc.id);
-          badges.push(doc.data());
-        }
-      });
-    })
-    .catch((err) => {
-      console.error(err);
-      return res.status(400).json({
-        general: `Error. Could not get badges for username/public key: ${badgeId}`,
-        error: err,
-      });
-    });
-
-  return res.status(200).json({ badges });
 };
 
 /**
@@ -99,17 +84,17 @@ exports.createBadge = async (req, res) => {
   let amountNanos = req.body.amountNanos;
   req.body.recipients = [...new Set(req.body.recipients)];
 
-  let premiumTier = req.body.recipients.length > 5;
+  let premiumTier = req.body.recipients.length > 25;
 
   if (premiumTier) {
     if (!signedTransactionHex || !amountNanos) {
       return res.status(400).json({
-        general: "Please specify signedTransactionHex and amountNanos",
+        general: 'Please specify signedTransactionHex and amountNanos',
       });
     }
 
-    let ratePerRecipient = 500000;
-    let numRecipients = req.body.recipients.length;
+    let ratePerRecipient = 5000000;
+    let numRecipients = req.body.recipients.length - 25;
     let minPrice = numRecipients * ratePerRecipient;
     if (amountNanos < minPrice) {
       return res.status(400).json({
@@ -122,25 +107,25 @@ exports.createBadge = async (req, res) => {
 
     if (hexLen <= 2) {
       return res.status(400).json({
-        general: "Invalid signed transaction hex: Not long enough to be valid",
+        general: 'Invalid signed transaction hex: Not long enough to be valid',
       });
     }
-    let inputTxnLen = "0x" + signedTransactionHex.substring(0, 2);
+    let inputTxnLen = '0x' + signedTransactionHex.substring(0, 2);
     inputTxnLen = parseInt(inputTxnLen, 16);
     if (isNaN(inputTxnLen)) {
       return res
         .status(400)
-        .json({ general: "Invalid transaction hex: InputTxnLen not a number" });
+        .json({ general: 'Invalid transaction hex: InputTxnLen not a number' });
     }
 
     let outputTxnLenIdx = 2 + 66 * inputTxnLen;
     let recipientPublicKeyIdx = outputTxnLenIdx + 2;
     let recipientAmountNanosIdx = recipientPublicKeyIdx + 66;
 
-    let nanoBytes = uvarint64ToBuf(amountNanos).toString("hex");
+    let nanoBytes = uvarint64ToBuf(amountNanos).toString('hex');
     if (nanoBytes.length + recipientAmountNanosIdx > hexLen) {
       return res.status(400).json({
-        general: "Invalid signed transaction hex: Not long enough to be valid",
+        general: 'Invalid signed transaction hex: Not long enough to be valid',
       });
     }
 
@@ -150,11 +135,11 @@ exports.createBadge = async (req, res) => {
     );
     if (
       recipientPublicKey !=
-      "02b6e2717127e11282ccdee91e176381a25f1114f2e21d994e14beda538e303698"
+      '02b6e2717127e11282ccdee91e176381a25f1114f2e21d994e14beda538e303698'
     ) {
       return res.status(400).json({
         general:
-          "Invalid recipient: recipient of transaction must be @BitBadges account",
+          'Invalid recipient: recipient of transaction must be @BitBadges account',
       });
     }
 
@@ -164,7 +149,7 @@ exports.createBadge = async (req, res) => {
         .startsWith(nanoBytes)
     ) {
       return res.status(400).json({
-        general: "Invalid signed transaction hex: amountNanos does not match",
+        general: 'Invalid signed transaction hex: amountNanos does not match',
       });
     }
   }
@@ -172,6 +157,7 @@ exports.createBadge = async (req, res) => {
   let badgeData = {
     title: req.body.title,
     issuer: req.body.issuer,
+    issuerChain: '$CLOUT',
     recipients: req.body.recipients,
     description: req.body.description,
     imageUrl: req.body.imageUrl,
@@ -181,6 +167,10 @@ exports.createBadge = async (req, res) => {
     backgroundColor: req.body.backgroundColor,
     externalUrl: req.body.externalUrl,
     dateCreated: Date.now(),
+    isVisible: true,
+    collectionId: '',
+    attributes: '{}',
+    category: '',
   };
 
   //validate all input details
@@ -189,7 +179,6 @@ exports.createBadge = async (req, res) => {
     isValidString(badgeData.issuer) &&
     isValidStringArray(badgeData.recipients) &&
     isString(badgeData.backgroundColor) &&
-    //isColor(badgeData.backgroundColor) &&
     isString(badgeData.description) &&
     isString(badgeData.externalUrl) &&
     isString(badgeData.imageUrl);
@@ -204,8 +193,40 @@ exports.createBadge = async (req, res) => {
     });
   }
 
-  //check if valid URL or URI here using isURL?????
+  if (
+    badgeData.externalUrl &&
+    badgeData.externalUrl.length > 0 &&
+    !isURL(badgeData.externalUrl)
+  ) {
+    return res.status(400).json({
+      general: `URL is invalidly formatted.`,
+    });
+  }
 
+  if (!badgeData.imagelUrl || badgeData.imagelUrl.length == 0) {
+    badgeData.imageUrl =
+      'https://images.bitclout.com/59638de19a21210d7ddd47ecec5ec041532930d5ec76b88b6ccebb14b2e6f571.webp';
+  }
+
+  if (
+    badgeData.backgroundColor &&
+    badgeData.backgroundColor.length > 0 &&
+    !isColor(badgeData.backgroundColor)
+  ) {
+    return res.status(400).json({
+      general: `Not a valid HTML color name.`,
+    });
+  } else {
+    badgeData.backgroundColor = '#000000';
+  }
+
+  let recipientsChains = [];
+  badgeData.recipients.forEach(() => {
+    recipientsChains.push('$CLOUT');
+  });
+  badgeData.recipientsChains = recipientsChains;
+
+  //check if valid URL or URI here using isURL?????
   valid = req.user.id === badgeData.issuer;
   if (!valid) {
     return res.status(400).json({
@@ -239,7 +260,7 @@ exports.createBadge = async (req, res) => {
   const { cid } = await client.add(JSON.stringify(badgeData)).catch((err) => {
     return res
       .status(400)
-      .json({ general: "Could not upload to IPFS.", error: err });
+      .json({ general: 'Could not upload to IPFS.', error: err });
   });
   let ipfsHash = cid.toString();
 
@@ -250,9 +271,9 @@ exports.createBadge = async (req, res) => {
 
   if (premiumTier) {
     await fetch(url, {
-      method: "post",
+      method: 'post',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         TransactionHex: signedTransactionHex,
@@ -261,14 +282,14 @@ exports.createBadge = async (req, res) => {
       .then((response) => response.json())
       .then((data) => {
         if (data.error) {
-          throw "Payment transaction failed";
+          throw 'Payment transaction failed';
         }
         console.log(data);
       })
       .catch((error) => {
         //should never reach here
         return res.status(400).json({
-          general: "ERROR: Payment transaction never went through!",
+          general: 'ERROR: Payment transaction never went through!',
         });
       });
   }
@@ -312,23 +333,23 @@ exports.createBadge = async (req, res) => {
   url = `https://bitclout.com/api/v0/submit-post`;
   let transactionHex = null;
   await fetch(url, {
-    method: "post",
+    method: 'post',
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       UpdaterPublicKeyBase58Check:
-        "BC1YLjPA6yn4mk9NnbFUiNbjitu4442dSwLKrTFLBqTwjph11HRjjZZ",
-      PostHashHexToModify: "",
-      ParentStakeID: "",
-      Title: "",
+        'BC1YLjPA6yn4mk9NnbFUiNbjitu4442dSwLKrTFLBqTwjph11HRjjZZ',
+      PostHashHexToModify: '',
+      ParentStakeID: '',
+      Title: '',
       BodyObj: {
         Body: ipfsHash,
         ImageURLs: [],
       },
-      RecloutedPostHashHex: "",
+      RecloutedPostHashHex: '',
       PostExtraData: {},
-      Sub: "",
+      Sub: '',
       IsHidden: false,
       MinFeeRateNanosPerKB: 1000,
     }),
@@ -341,7 +362,7 @@ exports.createBadge = async (req, res) => {
       //should never reach here
       return res.status(400).json({
         general:
-          "IMPORTANT: Could not submit post to BitClout chain! Please contact @BitBadges with your badge id to get it posted",
+          'IMPORTANT: Could not submit post to BitClout chain! Please contact @BitBadges with your badge id to get it posted',
         error: error,
       });
     });
@@ -350,9 +371,9 @@ exports.createBadge = async (req, res) => {
   url = `https://us-central1-bitbadgespostbot.cloudfunctions.net/api/sign`;
   let signedHex = null;
   await fetch(url, {
-    method: "post",
+    method: 'post',
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       transactionHex,
@@ -374,9 +395,9 @@ exports.createBadge = async (req, res) => {
   //submit transaction to BitClout chain
   url = `https://bitclout.com/api/v0/submit-transaction`;
   await fetch(url, {
-    method: "post",
+    method: 'post',
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       TransactionHex: signedHex,

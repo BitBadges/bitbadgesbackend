@@ -7,15 +7,20 @@ module.exports = async (req, res, next) => {
   let senderPublicKey = req.params.senderKey;
   let numRecipients = Number(req.params.numRecipients);
 
-  if (!numRecipients || !senderPublicKey || isNaN(numRecipients) || numRecipients < 0) {
+  if (
+    !numRecipients ||
+    !senderPublicKey ||
+    isNaN(numRecipients) ||
+    numRecipients < 0
+  ) {
     return res.status(400).json({ general: "Params are invalid" });
   }
 
-  numRecipients -= 5; //adjust for free tier
-  let thresholdAmt = 500000;
+  numRecipients -= 25; //adjust for free tier
+  let thresholdAmt = 5000000;
   let amountNanos = thresholdAmt * numRecipients;
   amountNanos = amountNanos < 0 ? 0 : amountNanos;
-  
+
   await fetch(url, {
     method: "post",
     headers: {

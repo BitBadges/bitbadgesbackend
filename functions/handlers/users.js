@@ -19,7 +19,7 @@ const {
  *  }
  * }
  */
-exports.getPublicKey = async (req, res) => {
+ exports.getPublicKey = async (req, res) => {
   let userName = req.params.userName;
 
   //get bitclout profile info
@@ -112,34 +112,8 @@ exports.getUsername = async (req, res) => {
  * Takes in a user's username and gets all database data for that user
  */
 exports.getUserInfo = async (req, res) => {
-  let userName = req.params.id;
-  let userId = null;
-
-  if (!userName) {
-    return res.status(400).json({
-      general: "No username parameter entered!",
-    });
-  }
-
-  //get public key
-  const url = `https://bitclout.com/api/v0/get-single-profile`;
-  let resData = {};
-  await fetch(url, {
-    method: "post",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ Username: userName }),
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      resData = data;
-      userId = data.Profile.PublicKeyBase58Check;
-    })
-    .catch((error) => {
-      console.error("Error:", error);
-    });
-
+  let userId = req.params.id;
+  
   //get user data from database
   let userData = {};
   let newUser = false;
