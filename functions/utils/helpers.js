@@ -1,9 +1,9 @@
-const { db, firestoreRef } = require("./admin");
+const { db, firestoreRef } = require('./admin');
 
-const isStr = (val) => typeof val === "string";
+const isStr = (val) => typeof val === 'string';
 
 const isEmpty = (string) => {
-  return string.trim() === "";
+  return string.trim() === '';
 };
 
 exports.isColor = (strColor) => {
@@ -13,19 +13,19 @@ exports.isColor = (strColor) => {
 
 exports.isURL = (str) => {
   var pattern = new RegExp(
-    "^(https?:\\/\\/)?" + // protocol
-      "((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|" + // domain name
-      "((\\d{1,3}\\.){3}\\d{1,3}))" + // OR ip (v4) address
-      "(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*" + // port and path
-      "(\\?[;&a-z\\d%_.~+=-]*)?" + // query string
-      "(\\#[-a-z\\d_]*)?$",
-    "i"
+    '^(https?:\\/\\/)?' + // protocol
+      '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // domain name
+      '((\\d{1,3}\\.){3}\\d{1,3}))' + // OR ip (v4) address
+      '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // port and path
+      '(\\?[;&a-z\\d%_.~+=-]*)?' + // query string
+      '(\\#[-a-z\\d_]*)?$',
+    'i'
   ); // fragment locator
   return !!pattern.test(str);
 };
 
-const isNumber = (val) => typeof val === "number" && val === val;
-const isBool = (val) => typeof val === "boolean";
+const isNumber = (val) => typeof val === 'number' && val === val;
+const isBool = (val) => typeof val === 'boolean';
 exports.isValidString = (str) => {
   return isStr(str) && !isEmpty(str);
 };
@@ -48,7 +48,31 @@ exports.isValidStringArray = (array) => {
   return valid;
 };
 
-exports.isValidBadgeArray = async (badges, userId) => {
+
+exports.allBadgesInIssued = async (badges, userId) => {
+  let userIssuedBadges = [];
+
+  await db
+    .doc(`/users/${userId}`)
+    .get()
+    .then((doc) => {
+      userIssuedBadges = doc.data().badgesIssued;
+    })
+    .catch((err) => {
+      console.error(err);
+      return false;
+    });
+
+  let valid = true;
+  badges.forEach((element) => {
+    if (!userIssuedBadges.includes(element)) {
+      valid = false;
+    }
+  });
+  return valid;
+};
+
+exports.allBadgesInReceived = async (badges, userId) => {
   let userReceivedBadges = [];
 
   await db

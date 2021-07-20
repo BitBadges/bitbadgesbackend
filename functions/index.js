@@ -15,6 +15,15 @@ const {
   declineBadge,
 } = require('./handlers/users');
 
+const {
+  createCollection,
+  deleteCollection,
+  getCollection,
+  addToCollection,
+  removeFromCollection,
+  getAllUserCollections
+} = require('./handlers/collections');
+
 const { getBadge, getBadges, createBadge } = require('./handlers/badges');
 
 const {
@@ -35,7 +44,7 @@ app.get('/badge/:id', getBadge);
 app.post('/badges', getBadges);
 
 app.get('/badgePages/:id', getBadgePage);
-app.get('/badgePages', getAllBadgePages);
+app.get('/userBadgePages/:userId', getAllBadgePages);
 app.get('/username/:publicKey', getUsername);
 app.get('/publicKey/:userName', getPublicKey);
 
@@ -43,6 +52,13 @@ app.get('/feeTxn/:senderKey/:numRecipients', getFeeTransaction);
 app.post('/hodlers', getHodlers);
 app.post('/acceptBadge', UserAuth, acceptBadge);
 app.post('/declineBadge', UserAuth, declineBadge);
+
+app.post('/createCollection', UserAuth, createCollection);
+app.post('/deleteCollection', UserAuth, deleteCollection);
+app.get('/collections/:userId/:name', getCollection);
+app.get('/collections/:userId', getAllUserCollections);
+app.post('/addToCollection', UserAuth, addToCollection);
+app.post('/removeFromCollection', UserAuth, removeFromCollection);
 
 /**
  * Issues a badge from current user to a seleted recipient
@@ -60,14 +76,14 @@ app.post('/badge', UserAuth, createBadge);
  *
  * req.body must match dbschema.js format for a badgePage
  *
- * Will append newly created id to the currentUser's badgesCreated array
+ * Will append newly created id to the currentUser's badgesListed array
  */
 app.post('/badgePages', UserAuth, createBadgePage);
 
 /**
- * Deletes specified badge page of the current user by id from both badgePages array and user's badgesCreated array
+ * Deletes specified badge page of the current user by id from both badgePages array and user's badgesListed array
  */
-app.delete('/badgePages/:id', UserAuth, deleteBadgePage);
+app.post('/badgePages/:id', UserAuth, deleteBadgePage);
 
 /**
  * Adds a page to the user's portfolio display

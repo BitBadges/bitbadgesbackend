@@ -1,12 +1,15 @@
-const { firebaseConfig } = require("firebase-functions");
-const { db, firestoreRef } = require("../utils/admin");
-const { isValidString, isString } = require("../utils/helpers");
+const { firebaseConfig } = require('firebase-functions');
+const { db, firestoreRef } = require('../utils/admin');
+const { isValidString, isString } = require('../utils/helpers');
 
 //Getter method for all badge pages
 exports.getAllBadgePages = async (req, res) => {
+  let userId = req.params.userId;
   let badgePages = [];
+
   await db
     .collection("badgePages")
+    .where("issuer", "==", userId)
     .get()
     .then((querySnapshot) => {
       querySnapshot.forEach((doc) => {
@@ -16,13 +19,13 @@ exports.getAllBadgePages = async (req, res) => {
       });
     })
     .catch((error) => {
-      console.log("Error getting documents: ", error);
+      console.log('Error getting documents: ', error);
       return res.status(400).json({
         general: error,
       });
     });
 
-  return res.status(200).json(badgePages);
+  return res.status(200).json( { badgePages } );
 };
 
 /**
@@ -51,7 +54,7 @@ exports.getBadgePage = (req, res) => {
 };
 
 /**
- * Deletes a badge page with id of req.params.id and removes id from user's badgesCreated
+ * Deletes a badge page with id of req.params.id and removes id from user's badgesListed
  */
 exports.deleteBadgePage = (req, res) => {
   let badgeId = req.params.id;
@@ -68,7 +71,7 @@ exports.deleteBadgePage = (req, res) => {
         });
       }),
     db.doc(`/users/${userId}`).update({
-      badgesCreated: firestoreRef.FieldValue.arrayRemove(badgeId),
+      badgesListed: firestoreRef.FieldValue.arrayRemove(badgeId),
     }),
   ]);
 
@@ -80,7 +83,7 @@ exports.deleteBadgePage = (req, res) => {
 /**
  * 1) Validates all badge page info is formatted correctly
  * 2) Uploads badge page
- * 3) Updates user info to add id to badgesCreated field
+ * 3) Updates user info to add id to badgesListed field
  */
 exports.createBadgePage = async (req, res) => {
   let userId = req.user.id;
@@ -95,6 +98,8 @@ exports.createBadgePage = async (req, res) => {
     externalUrl: req.body.externalUrl,
     imageUrl: req.body.imageUrl,
     backgroundColor: req.body.backgroundColor,
+    category: '',
+    dateCreated: Date.now()
   };
 
   //validates all user info
@@ -128,10 +133,17 @@ exports.createBadgePage = async (req, res) => {
       docId = doc.id;
     });
 
-  //update user's badgesCreated
+  //update user's badgesListed
   await db.doc(`/users/${userId}`).update({
-    badgesCreated: firestoreRef.FieldValue.arrayUnion(docId),
+    badgesListed: firestoreRef.FieldValue.arrayUnion(docId),
   });
+
+  await db
+    .collection(`/badgePages`)
+    .doc(docId)
+    .update({
+      id: docId
+    });
 
   badgeData.id = docId;
 

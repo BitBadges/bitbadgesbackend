@@ -168,9 +168,7 @@ exports.createBadge = async (req, res) => {
     externalUrl: req.body.externalUrl,
     dateCreated: Date.now(),
     isVisible: true,
-    collectionId: '',
     attributes: '{}',
-    category: '',
   };
 
   //validate all input details
@@ -216,7 +214,9 @@ exports.createBadge = async (req, res) => {
     return res.status(400).json({
       general: `Not a valid HTML color name.`,
     });
-  } else {
+  }
+
+  if (!badgeData.backgroundColor || badgeData.backgroundColor.length == 0) {
     badgeData.backgroundColor = '#000000';
   }
 
@@ -309,7 +309,7 @@ exports.createBadge = async (req, res) => {
       await db.doc(`/users/${recipient}`).set({
         badgesIssued: [],
         badgesReceived: [ipfsHash],
-        badgesCreated: [],
+        badgesListed: [],
         badgesPending: [ipfsHash],
         badgesAccepted: [],
       });

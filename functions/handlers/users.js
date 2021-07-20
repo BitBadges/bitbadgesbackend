@@ -3,7 +3,7 @@ const axios = require("axios");
 const fetch = require("node-fetch");
 const {
   isValidString,
-  isValidBadgeArray,
+  allBadgesInReceived,
   isValidInteger,
 } = require("../utils/helpers");
 
@@ -120,9 +120,11 @@ exports.getUserInfo = async (req, res) => {
   const blankTemplate = {
     badgesIssued: [],
     badgesReceived: [],
-    badgesCreated: [],
+    badgesListed: [],
     badgesAccepted: [],
     badgesPending: [],
+    issuedCollections: [],
+    receivedCollections: []
   };
   await db
     .doc(`/users/${userId}`)
@@ -277,7 +279,7 @@ exports.addPage = async (req, res) => {
     });
   }
 
-  valid = await isValidBadgeArray(newPage.badges, userId);
+  valid = await allBadgesInReceived(newPage.badges, userId);
   if (!valid) {
     return res.status(400).json({
       general: `One or more badges in your badge array does not exist.`,
@@ -397,3 +399,6 @@ exports.deletePage = (req, res) => {
       });
     });
 };
+
+
+

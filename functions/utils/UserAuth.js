@@ -116,9 +116,11 @@ module.exports = async (req, res, next) => {
         const blankTemplate = {
           badgesIssued: [],
           badgesReceived: [],
-          badgesCreated: [],
+          badgesListed: [],
           badgesAccepted: [],
           badgesPending: [],
+          issuedCollections: [],
+          receivedCollections: []
         };
         await db.doc(`/users/${req.user.id}`).set(blankTemplate);
       }
