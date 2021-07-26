@@ -56,7 +56,7 @@ exports.createCollection = async (req, res) => {
     });
   }
 
-  if (!collection.imagelUrl || collection.imagelUrl.length == 0) {
+  if (!collection.imageUrl || collection.imageUrl.length == 0) {
     collection.imageUrl =
       'https://images.bitclout.com/59638de19a21210d7ddd47ecec5ec041532930d5ec76b88b6ccebb14b2e6f571.webp';
   }
@@ -220,7 +220,7 @@ exports.getCollection = async (req, res) => {
 /**
  * Takes in a user's username and gets all user's collection data about that
  */
- exports.getAllUserCollections = async (req, res) => {
+exports.getAllUserCollections = async (req, res) => {
   let userId = req.params.userId;
 
   console.log(userId);
@@ -280,7 +280,7 @@ exports.addToCollection = async (req, res) => {
       });
     }
   } else {
-    valid = await allBadgesInIssued(collection.badges, userId);
+    valid = await allBadgesInIssued(badges, userId);
     if (!valid) {
       return res.status(400).json({
         general: `One or more badges in your badge array does not exist in your issued badges.`,

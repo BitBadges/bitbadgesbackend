@@ -201,7 +201,7 @@ exports.createBadge = async (req, res) => {
     });
   }
 
-  if (!badgeData.imagelUrl || badgeData.imagelUrl.length == 0) {
+  if (!badgeData.imageUrl || badgeData.imageUrl.length == 0) {
     badgeData.imageUrl =
       'https://images.bitclout.com/59638de19a21210d7ddd47ecec5ec041532930d5ec76b88b6ccebb14b2e6f571.webp';
   }
@@ -312,6 +312,8 @@ exports.createBadge = async (req, res) => {
         badgesListed: [],
         badgesPending: [ipfsHash],
         badgesAccepted: [],
+        issuedCollections: [],
+        receivedCollections: []
       });
     } else {
       await db.doc(`/users/${recipient}`).update({
@@ -339,7 +341,7 @@ exports.createBadge = async (req, res) => {
     },
     body: JSON.stringify({
       UpdaterPublicKeyBase58Check:
-        'BC1YLjPA6yn4mk9NnbFUiNbjitu4442dSwLKrTFLBqTwjph11HRjjZZ',
+        'BC1YLgvPruTYF3R66H96g1nCq9jhewpH7k8iwjQr7WoLacby8tNZNan',
       PostHashHexToModify: '',
       ParentStakeID: '',
       Title: '',
