@@ -6,4 +6,4 @@
 
 # BitBadges Backend
 
-Link to documentation: https://mentors4edu.gitbook.io/bitbadges
+Link to documentation: https://bitclout.github.io
