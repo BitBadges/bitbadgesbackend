@@ -1,11 +1,11 @@
-const { db, firestoreRef } = require("../utils/admin");
-const axios = require("axios");
-const fetch = require("node-fetch");
+const { db, firestoreRef } = require('../utils/admin');
+const axios = require('axios');
+const fetch = require('node-fetch');
 const {
-  isValidString,
-  allBadgesInReceived,
-  isValidInteger,
-} = require("../utils/helpers");
+    isValidString,
+    allBadgesInReceived,
+    isValidInteger,
+} = require('../utils/helpers');
 
 /**
  * Gets public key from BitClout API
@@ -19,57 +19,57 @@ const {
  *  }
  * }
  */
- exports.getPublicKey = async (req, res) => {
-  let userName = req.params.userName;
+exports.getPublicKey = async (req, res) => {
+    let userName = req.params.userName;
 
-  //get bitclout profile info
-  const url = `https://bitclout.com/api/v0/get-single-profile`;
-  let resData = {};
-  await fetch(url, {
-    method: "post",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ Username: userName }),
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      resData = data;
-      // console.log("Success:", data);
+    //get bitclout profile info
+    const url = `https://bitclout.com/api/v0/get-single-profile`;
+    let resData = {};
+    await fetch(url, {
+        method: 'post',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ Username: userName }),
     })
-    .catch((error) => {
-      console.error("Error:", error);
-    });
+        .then((response) => response.json())
+        .then((data) => {
+            resData = data;
+            // console.log("Success:", data);
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
 
-  return res.status(200).json(resData);
+    return res.status(200).json(resData);
 };
 
 exports.getHodlers = async (req, res) => {
-  //get bitclout profile info
-  const url = `https://bitclout.com/api/v0/get-hodlers-for-public-key`;
-  let resData = {};
-  console.log("UName", req.body.Username);
-  console.log("Num", req.body.NumToFetch);
-  await fetch(url, {
-    method: "post",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      Username: req.body.Username,
-      NumToFetch: req.body.NumToFetch,
-    }),
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      resData = data;
-      console.log("Success:", data);
+    //get bitclout profile info
+    const url = `https://bitclout.com/api/v0/get-hodlers-for-public-key`;
+    let resData = {};
+    console.log('UName', req.body.Username);
+    console.log('Num', req.body.NumToFetch);
+    await fetch(url, {
+        method: 'post',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            Username: req.body.Username,
+            NumToFetch: req.body.NumToFetch,
+        }),
     })
-    .catch((error) => {
-      return res.status(400).json(error);
-    });
+        .then((response) => response.json())
+        .then((data) => {
+            resData = data;
+            console.log('Success:', data);
+        })
+        .catch((error) => {
+            return res.status(400).json(error);
+        });
 
-  return res.status(200).json(resData);
+    return res.status(200).json(resData);
 };
 
 /**
@@ -85,89 +85,89 @@ exports.getHodlers = async (req, res) => {
  * }
  */
 exports.getUsername = async (req, res) => {
-  let publicKey = req.params.publicKey;
-  const url = `https://bitclout.com/api/v0/get-single-profile`;
-  let resData = {};
-  console.log({ PublicKeyBase58Check: publicKey });
-  await fetch(url, {
-    method: "post",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ PublicKeyBase58Check: publicKey }),
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      resData = data;
-      console.log("Success:", data);
+    let publicKey = req.params.publicKey;
+    const url = `https://bitclout.com/api/v0/get-single-profile`;
+    let resData = {};
+    console.log({ PublicKeyBase58Check: publicKey });
+    await fetch(url, {
+        method: 'post',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ PublicKeyBase58Check: publicKey }),
     })
-    .catch((error) => {
-      console.error("Error:", error);
-    });
+        .then((response) => response.json())
+        .then((data) => {
+            resData = data;
+            console.log('Success:', data);
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
 
-  return res.status(200).json(resData);
+    return res.status(200).json(resData);
 };
 
 /**
  * Takes in a user's username and gets all database data for that user
  */
 exports.getUserInfo = async (req, res) => {
-  let userId = req.params.id;
-  
-  //get user data from database
-  let userData = {};
-  let newUser = false;
-  const blankTemplate = {
-    badgesIssued: [],
-    badgesReceived: [],
-    badgesListed: [],
-    badgesAccepted: [],
-    badgesPending: [],
-    issuedCollections: [],
-    receivedCollections: []
-  };
-  await db
-    .doc(`/users/${userId}`)
-    .get()
-    .then((doc) => {
-      if (!doc.exists) {
-        newUser = true;
-      } else {
-        userData = doc.data();
-      }
-    })
-    .catch((err) => {
-      console.error(err);
-      return res.status(400).json({
-        general: `Could not find ${userId}'s data in our database. Make sure they have signed up for BitBadges.`,
-      });
-    });
+    let userId = req.params.id;
 
-  if (newUser) {
-    await db.doc(`/users/${userId}`).set(blankTemplate);
-    blankTemplate.portfolioPages = [];
-    return res.status(200).json(blankTemplate);
-  }
-  //get user's portfolio pages from database
-  await db
-    .doc(`/users/${userId}`)
-    .collection("portfolioPages")
-    .get()
-    .then((data) => {
-      let badges = [];
-      data.forEach((doc) => {
-        badges.push(doc.data());
-      });
-      userData.portfolioPages = badges;
-    })
-    .catch((err) => {
-      console.error(err);
-      return res.status(400).json({
-        general: `Error. Could not get ${userId}'s portfolio preference pages`,
-      });
-    });
+    //get user data from database
+    let userData = {};
+    let newUser = false;
+    const blankTemplate = {
+        badgesIssued: [],
+        badgesReceived: [],
+        badgesListed: [],
+        badgesAccepted: [],
+        badgesPending: [],
+        issuedCollections: [],
+        receivedCollections: [],
+    };
+    await db
+        .doc(`/users/${userId}`)
+        .get()
+        .then((doc) => {
+            if (!doc.exists) {
+                newUser = true;
+            } else {
+                userData = doc.data();
+            }
+        })
+        .catch((err) => {
+            console.error(err);
+            return res.status(400).json({
+                general: `Could not find ${userId}'s data in our database. Make sure they have signed up for BitBadges.`,
+            });
+        });
 
-  return res.status(200).json(userData);
+    if (newUser) {
+        await db.doc(`/users/${userId}`).set(blankTemplate);
+        blankTemplate.portfolioPages = [];
+        return res.status(200).json(blankTemplate);
+    }
+    //get user's portfolio pages from database
+    await db
+        .doc(`/users/${userId}`)
+        .collection('portfolioPages')
+        .get()
+        .then((data) => {
+            let badges = [];
+            data.forEach((doc) => {
+                badges.push(doc.data());
+            });
+            userData.portfolioPages = badges;
+        })
+        .catch((err) => {
+            console.error(err);
+            return res.status(400).json({
+                general: `Error. Could not get ${userId}'s portfolio preference pages`,
+            });
+        });
+
+    return res.status(200).json(userData);
 };
 
 /**
@@ -176,36 +176,36 @@ exports.getUserInfo = async (req, res) => {
  * req.body must specify pageTitle, badges, and pageNum
  */
 exports.acceptBadge = async (req, res) => {
-  let userId = req.user.id;
-  let userName = req.user.username;
+    let userId = req.user.id;
+    let userName = req.user.username;
 
-  let badgeId = req.body.badgeId;
+    let badgeId = req.body.badgeId;
 
-  //validate all input fields
-  let valid = isValidString(badgeId);
-  if (!valid) {
-    return res.status(400).json({
-      general: `Please enter a valid string for the badge id`,
-    });
-  }
-  await db
-    .doc(`/users/${userId}`)
-    .get()
-    .then(async (doc) => {
-      if (doc.data().badgesPending.includes(badgeId)) {
-        await db.doc(`/users/${userId}`).update({
-          badgesPending: firestoreRef.FieldValue.arrayRemove(badgeId),
-          badgesAccepted: firestoreRef.FieldValue.arrayUnion(badgeId),
-        });
-        return res.status(200).json({
-          general: `Success. Accepted badge ${badgeId}`,
-        });
-      } else {
+    //validate all input fields
+    let valid = isValidString(badgeId);
+    if (!valid) {
         return res.status(400).json({
-          general: `Error. ${badgeId} not in pending array`,
+            general: `Please enter a valid string for the badge id`,
         });
-      }
-    });
+    }
+    await db
+        .doc(`/users/${userId}`)
+        .get()
+        .then(async (doc) => {
+            if (doc.data().badgesPending.includes(badgeId)) {
+                await db.doc(`/users/${userId}`).update({
+                    badgesPending: firestoreRef.FieldValue.arrayRemove(badgeId),
+                    badgesAccepted: firestoreRef.FieldValue.arrayUnion(badgeId),
+                });
+                return res.status(200).json({
+                    general: `Success. Accepted badge ${badgeId}`,
+                });
+            } else {
+                return res.status(400).json({
+                    general: `Error. ${badgeId} not in pending array`,
+                });
+            }
+        });
 };
 
 /**
@@ -214,35 +214,35 @@ exports.acceptBadge = async (req, res) => {
  * req.body must specify pageTitle, badges, and pageNum
  */
 exports.declineBadge = async (req, res) => {
-  let userId = req.user.id;
-  let userName = req.user.username;
+    let userId = req.user.id;
+    let userName = req.user.username;
 
-  let badgeId = req.body.badgeId;
+    let badgeId = req.body.badgeId;
 
-  //validate all input fields
-  let valid = isValidString(badgeId);
-  if (!valid) {
-    return res.status(400).json({
-      general: `Please enter a valid string for the badge id`,
-    });
-  }
-  await db
-    .doc(`/users/${userId}`)
-    .get()
-    .then(async (doc) => {
-      if (doc.data().badgesPending.includes(badgeId)) {
-        await db.doc(`/users/${userId}`).update({
-          badgesPending: firestoreRef.FieldValue.arrayRemove(badgeId),
-        });
-        return res.status(200).json({
-          general: `Success. Declined badge ${badgeId}`,
-        });
-      } else {
+    //validate all input fields
+    let valid = isValidString(badgeId);
+    if (!valid) {
         return res.status(400).json({
-          general: `Error. ${badgeId} not in pending array`,
+            general: `Please enter a valid string for the badge id`,
         });
-      }
-    });
+    }
+    await db
+        .doc(`/users/${userId}`)
+        .get()
+        .then(async (doc) => {
+            if (doc.data().badgesPending.includes(badgeId)) {
+                await db.doc(`/users/${userId}`).update({
+                    badgesPending: firestoreRef.FieldValue.arrayRemove(badgeId),
+                });
+                return res.status(200).json({
+                    general: `Success. Declined badge ${badgeId}`,
+                });
+            } else {
+                return res.status(400).json({
+                    general: `Error. ${badgeId} not in pending array`,
+                });
+            }
+        });
 };
 
 /**
@@ -251,100 +251,100 @@ exports.declineBadge = async (req, res) => {
  * req.body must specify pageTitle, badges, and pageNum
  */
 exports.addPage = async (req, res) => {
-  let userId = req.user.id;
-  let userName = req.user.username;
+    let userId = req.user.id;
+    let userName = req.user.username;
 
-  let newPage = {
-    pageTitle: req.body.pageTitle,
-    badges: req.body.badges,
-    pageNum: req.body.pageNum,
-    description: req.body.description,
-  };
+    let newPage = {
+        pageTitle: req.body.pageTitle,
+        badges: req.body.badges,
+        pageNum: req.body.pageNum,
+        description: req.body.description,
+    };
 
-  //validate all input fields
-  let valid = isValidString(newPage.pageTitle);
-  if (!valid) {
-    return res.status(400).json({
-      general: `Please enter a valid string for the page title`,
-    });
-  }
+    //validate all input fields
+    let valid = isValidString(newPage.pageTitle);
+    if (!valid) {
+        return res.status(400).json({
+            general: `Please enter a valid string for the page title`,
+        });
+    }
 
-  if (!newPage.description) {
-    newPage.description = "";
-  }
-  valid = isValidString(newPage.description);
-  if (!valid) {
-    return res.status(400).json({
-      general: `Please enter a valid string for the description`,
-    });
-  }
+    if (!newPage.description) {
+        newPage.description = '';
+    }
+    valid = isValidString(newPage.description);
+    if (!valid) {
+        return res.status(400).json({
+            general: `Please enter a valid string for the description`,
+        });
+    }
 
-  valid = await allBadgesInReceived(newPage.badges, userId);
-  if (!valid) {
-    return res.status(400).json({
-      general: `One or more badges in your badge array does not exist.`,
-    });
-  }
+    valid = await allBadgesInReceived(newPage.badges, userId);
+    if (!valid) {
+        return res.status(400).json({
+            general: `One or more badges in your badge array does not exist.`,
+        });
+    }
 
-  valid = isValidInteger(newPage.pageNum) && newPage.pageNum >= 0;
-  if (!valid) {
-    return res.status(400).json({
-      general: `pageNum is not a valid number. Must be an integer greater than or equal to zero.`,
-    });
-  }
+    valid = isValidInteger(newPage.pageNum) && newPage.pageNum >= 0;
+    if (!valid) {
+        return res.status(400).json({
+            general: `pageNum is not a valid number. Must be an integer greater than or equal to zero.`,
+        });
+    }
 
-  //get all current profile pages
-  let currSize;
-  let pageData = {};
+    //get all current profile pages
+    let currSize;
+    let pageData = {};
 
-  db.doc(`/users/${userId}`)
-    .collection("portfolioPages")
-    .orderBy("pageNum", "desc")
-    .get()
-    .then((data) => {
-      currSize = data.size;
-      pageData = data;
-      if (newPage.pageNum > currSize) {
-        throw `Error. Page num is greater than number of current pages`;
-      }
-      pageData = data;
-    })
-    .then(async () => {
-      //no duplicate pageTitle allowed
-      pageData.forEach((doc) => {
-        let docData = doc.data();
-        if (docData.pageTitle === newPage.pageTitle) {
-          throw `Error. Page already exists with that pageTitle`;
-        }
-      });
+    db.doc(`/users/${userId}`)
+        .collection('portfolioPages')
+        .orderBy('pageNum', 'desc')
+        .get()
+        .then((data) => {
+            currSize = data.size;
+            pageData = data;
+            if (newPage.pageNum > currSize) {
+                throw `Error. Page num is greater than number of current pages`;
+            }
+            pageData = data;
+        })
+        .then(async () => {
+            //no duplicate pageTitle allowed
+            pageData.forEach((doc) => {
+                let docData = doc.data();
+                if (docData.pageTitle === newPage.pageTitle) {
+                    throw `Error. Page already exists with that pageTitle`;
+                }
+            });
 
-      //update pageNums for all pages
-      pageData.forEach(async (doc) => {
-        let docData = doc.data();
-        if (docData.pageNum >= newPage.pageNum) {
-          await doc.ref.update({
-            pageNum: firestoreRef.FieldValue.increment(1),
-          });
-        }
-      });
-    })
-    .then(async () => {
-      //set the new page's info
-      await db
-        .doc(`/users/${userId}`)
-        .collection("portfolioPages")
-        .doc(newPage.pageTitle)
-        .set(newPage);
+            //update pageNums for all pages
+            pageData.forEach(async (doc) => {
+                let docData = doc.data();
+                if (docData.pageNum >= newPage.pageNum) {
+                    await doc.ref.update({
+                        pageNum: firestoreRef.FieldValue.increment(1),
+                    });
+                }
+            });
+        })
+        .then(async () => {
+            //set the new page's info
+            await db
+                .doc(`/users/${userId}`)
+                .collection('portfolioPages')
+                .doc(newPage.pageTitle)
+                .set(newPage);
 
-      return res.status(200).json(newPage);
-    })
-    .catch((err) => {
-      console.error(err);
-      return res.status(400).json({
-        general: `Error. Could not create ${userId}'s portfolio page.`,
-        error: err,
-      });
-    });
+            return res.status(200).json(newPage);
+        })
+        .catch((err) => {
+            console.error(err);
+            return res.status(400).json({
+                general: `Error. Could not create ${userId}'s portfolio page.`,
+                error: err,
+            });
+        });
 };
 
 /**
@@ -353,52 +353,124 @@ exports.addPage = async (req, res) => {
  * req.body.pageNum is page to be deleted;
  */
 exports.deletePage = (req, res) => {
-  let userId = req.user.id;
-  let idx = req.body.pageNum;
+    let userId = req.user.id;
+    let idx = req.body.pageNum;
 
-  //validate pageNum is an int
-  let valid = isValidInteger(idx) && idx >= 0;
-  if (!valid) {
-    return res.status(400).json({
-      general: `pageNum is not a valid number.`,
-    });
-  }
+    //validate pageNum is an int
+    let valid = isValidInteger(idx) && idx >= 0;
+    if (!valid) {
+        return res.status(400).json({
+            general: `pageNum is not a valid number.`,
+        });
+    }
 
-  //get all pages and update pageNums accordingly
-  db.doc(`/users/${userId}`)
-    .collection("portfolioPages")
-    .orderBy("pageNum", "desc")
-    .get()
-    .then(async (data) => {
-      //check if valid index
-      currSize = data.size;
-      if (idx >= currSize) {
-        throw `Error. Page num is >= current size`;
-      }
+    //get all pages and update pageNums accordingly
+    db.doc(`/users/${userId}`)
+        .collection('portfolioPages')
+        .orderBy('pageNum', 'desc')
+        .get()
+        .then(async (data) => {
+            //check if valid index
+            currSize = data.size;
+            if (idx >= currSize) {
+                throw `Error. Page num is >= current size`;
+            }
 
-      data.forEach(async (doc) => {
-        let docData = doc.data();
-        if (docData.pageNum > idx) {
-          await doc.ref.update({
-            pageNum: firestoreRef.FieldValue.increment(-1),
-          });
-        } else if (docData.pageNum == idx) {
-          await doc.ref.delete();
-        }
-      });
+            data.forEach(async (doc) => {
+                let docData = doc.data();
+                if (docData.pageNum > idx) {
+                    await doc.ref.update({
+                        pageNum: firestoreRef.FieldValue.increment(-1),
+                    });
+                } else if (docData.pageNum == idx) {
+                    await doc.ref.delete();
+                }
+            });
 
-      return res.status(200).json({
-        general: `Page number ${idx} has been successfully removed!`,
-      });
-    })
-    .catch((err) => {
-      console.error(err);
-      return res.status(400).json({
-        general: `Error. Could not delete ${userId}'s portfolio page.`,
-        error: err,
-      });
-    });
+            return res.status(200).json({
+                general: `Page number ${idx} has been successfully removed!`,
+            });
+        })
+        .catch((err) => {
+            console.error(err);
+            return res.status(400).json({
+                general: `Error. Could not delete ${userId}'s portfolio page.`,
+                error: err,
+            });
+        });
 };
 
+/**
+ * Removes a badge that was previously accepted from a user's profile
+ */
+exports.removeAcceptedBadge = async (req, res) => {
+    let userId = req.user.id;
+    let userName = req.user.username;
 
+    let badgeId = req.body.badgeId;
 
+    //validate all input fields
+    let valid = isValidString(badgeId);
+    if (!valid) {
+        return res.status(400).json({
+            general: `Please enter a valid string for the badge id`,
+        });
+    }
+
+    await db
+        .doc(`/users/${userId}`)
+        .get()
+        .then(async (doc) => {
+            if (doc.data().badgesAccepted.includes(badgeId)) {
+                await db.doc(`/users/${userId}`).update({
+                    badgesAccepted:
+                        firestoreRef.FieldValue.arrayRemove(badgeId),
+                });
+                return res.status(200).json({
+                    general: `Success. Removed badge from accepted badges: ${badgeId}`,
+                });
+            } else {
+                return res.status(400).json({
+                    general: `Error. ${badgeId} not in accepted array array`,
+                });
+            }
+        });
+};
+
+/**
+ * Removes a badge from your badgesIssued and adds it to badgesRemovedFromIssued
+ */
+exports.removeIssuedBadge = async (req, res) => {
+    let userId = req.user.id;
+    let userName = req.user.username;
+
+    let badgeId = req.body.badgeId;
+
+    //validate all input fields
+    let valid = isValidString(badgeId);
+    if (!valid) {
+        return res.status(400).json({
+            general: `Please enter a valid string for the badge id`,
+        });
+    }
+
+    await db
+        .doc(`/users/${userId}`)
+        .get()
+        .then(async (doc) => {
+            if (doc.data().badgesIssued.includes(badgeId)) {
+                await db.doc(`/users/${userId}`).update({
+                    badgesIssued: firestoreRef.FieldValue.arrayRemove(badgeId),
+                    badgesRemovedFromIssued:
+                        firestoreRef.FieldValue.arrayUnion(badgeId),
+                });
+                return res.status(200).json({
+                    general: `Success. Removed badge from issued badges: ${badgeId}`,
+                });
+            } else {
+                return res.status(400).json({
+                    general: `Error. ${badgeId} not in accepted array array`,
+                });
+            }
+        });
+};

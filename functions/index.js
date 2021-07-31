@@ -5,32 +5,34 @@ const cors = require('cors');
 app.use(cors());
 
 const {
-  addPage,
-  deletePage,
-  getUserInfo,
-  getUsername,
-  getPublicKey,
-  getHodlers,
-  acceptBadge,
-  declineBadge,
+    addPage,
+    deletePage,
+    getUserInfo,
+    getUsername,
+    getPublicKey,
+    getHodlers,
+    acceptBadge,
+    declineBadge,
+    removeAcceptedBadge,
+    removeIssuedBadge
 } = require('./handlers/users');
 
 const {
-  createCollection,
-  deleteCollection,
-  getCollection,
-  addToCollection,
-  removeFromCollection,
-  getAllUserCollections
+    createCollection,
+    deleteCollection,
+    getCollection,
+    addToCollection,
+    removeFromCollection,
+    getAllUserCollections,
 } = require('./handlers/collections');
 
 const { getBadge, getBadges, createBadge } = require('./handlers/badges');
 
 const {
-  getAllBadgePages,
-  getBadgePage,
-  createBadgePage,
-  deleteBadgePage,
+    getAllBadgePages,
+    getBadgePage,
+    createBadgePage,
+    deleteBadgePage,
 } = require('./handlers/badgePages');
 
 const BadgePaywall = require('./utils/BadgePaywall');
@@ -51,6 +53,9 @@ app.get('/publicKey/:userName', getPublicKey);
 app.get('/feeTxn/:senderKey/:numRecipients', getFeeTransaction);
 app.post('/hodlers', getHodlers);
 app.post('/acceptBadge', UserAuth, acceptBadge);
+
+app.post('/hideAcceptedBadge', UserAuth, removeAcceptedBadge);
+app.post('/hideIssuedBadge', UserAuth, removeIssuedBadge);
 app.post('/declineBadge', UserAuth, declineBadge);
 
 app.post('/createCollection', UserAuth, createCollection);
