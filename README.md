@@ -6,4 +6,6 @@
 
 # BitBadges Backend
 
-Link to documentation: https://bitclout.github.io
+> This is the repository for our backend.
+
+Link to documentation: https://bitbadges.github.io/
