@@ -121,6 +121,12 @@ export async function acceptBadge(expressReq: Request, res: Response) {
                 badgesAccepted: firestoreRef.FieldValue.arrayUnion(badgeId),
             });
 
+            await db.doc(`/badges/${badgeId}`).update(
+                {
+                    dateAccepted: Date.now()
+                }
+            );
+
             return successHandler(res, { general: 'Successfully accepted badge' });
         } else {
             return errorHandler(res, `${badgeId} not in pending array`);
