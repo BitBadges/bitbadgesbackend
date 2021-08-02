@@ -58,6 +58,36 @@ export async function getBadge(req: Request, res: Response) {
     }
 }
 
+export async function getRecentlyAcceptedBadges(req: Request, res: Response) {
+    try {
+        const numToFetch = Number(req.params.numToFetch);
+        const badges: any[] = [];
+
+        if (!isInteger(numToFetch)) {
+            return errorHandler(res, 'numToFetch is not a valid integer.');
+        }
+
+        if (numToFetch <= 0) {
+            return successHandler(res, { badges: [] });
+        }
+
+        await db
+            .collection('badges')
+            .orderBy('dateAccepted', 'desc')
+            .limit(numToFetch)
+            .get()
+            .then((querySnapshot) => {
+                querySnapshot.forEach((doc) => {
+                    badges.push(doc.data());
+                });
+            });
+
+        return successHandler(res, { badges });
+    } catch (error) {
+        return errorHandler(res, 'Error getting badges');
+    }
+}
+
 /**
  * 1) Validates all req.body info matches badge formatting standards
  * 2) Uploads to IPFS

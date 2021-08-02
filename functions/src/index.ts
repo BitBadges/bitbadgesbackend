@@ -4,7 +4,7 @@ import * as functions from 'firebase-functions';
 import express from 'express';
 import { authorizeUser } from './utils/UserAuth';
 import { getFeeTransaction } from './utils/getFeeTxn';
-import { getBadge, getBadges, createBadge } from './handlers/badges';
+import { getBadge, getBadges, createBadge, getRecentlyAcceptedBadges } from './handlers/badges';
 import cors from 'cors';
 import {
     getUserInfo,
@@ -30,7 +30,7 @@ import {
     getAllBadgePages,
     getBadgePage,
     createBadgePage,
-    deleteBadgePage,
+    deleteBadgePage
 } from './handlers/badgePages';
 
 const app = express();
@@ -52,6 +52,7 @@ app.post('/badge', authorizeUser, createBadge);
 app.get('/badge/:id', getBadge);
 app.post('/badges', getBadges);
 app.get('/feeTxn/:senderKey/:numRecipients', getFeeTransaction);
+app.get('/recentBadges/:numToFetch', getRecentlyAcceptedBadges);
 
 //badgePages.ts
 app.get('/badgePages/:id', getBadgePage);
