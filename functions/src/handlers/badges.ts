@@ -3,7 +3,7 @@ import { db, firestoreRef } from '../utils/admin';
 import ipfs from 'ipfs-http-client';
 import fetch from 'node-fetch';
 import { Request, Response } from 'express';
-import { isNonEmptyString, isString, isInteger, isBoolean, isValidStringArray, isColor, isURL, isLengthLessThan } from '../utils/validators';
+import { isNonEmptyString, isString, isInteger, isBoolean, isValidStringArray, isColor, isURL, isLengthLessThan, isJsonString } from '../utils/validators';
 import { uvarint64ToBuf } from '../utils/helpers';
 import { AuthenticatedRequest } from '../types/authentication';
 import { errorHandler, successHandler } from '../utils/globals';
@@ -73,7 +73,6 @@ export async function createBadge(expressReq: Request, res: Response) {
     const amountNanos = req.body.amountNanos;
     req.body.recipients = [...new Set(req.body.recipients)];
     const premiumTier = req.body.recipients.length > 25;
-
     const badgeData: any = {
         title: req.body.title,
         issuer: req.body.issuer,
@@ -88,7 +87,7 @@ export async function createBadge(expressReq: Request, res: Response) {
         externalUrl: req.body.externalUrl,
         dateCreated: Date.now(),
         isVisible: true,
-        attributes: '{}',
+        attributes: req.body.attributes ? req.body.attributes : '{}',
     };
 
     const valid =
@@ -98,7 +97,8 @@ export async function createBadge(expressReq: Request, res: Response) {
         isString(badgeData.backgroundColor) &&
         isString(badgeData.description) &&
         isString(badgeData.externalUrl) &&
-        isString(badgeData.imageUrl);
+        isString(badgeData.imageUrl) &&
+        isNonEmptyString(badgeData.attributes);
 
     if (!valid) {
         return errorHandler(res, 'String inputs are not formatted correctly. Title and issuer are required not to be empty and all else must be valid strings. Background color must be a valid HTML color property. URLs must be in a valid URL format',);
@@ -125,6 +125,10 @@ export async function createBadge(expressReq: Request, res: Response) {
 
     if (!isColor(badgeData.backgroundColor)) {
         return errorHandler(res, 'backgroundColor is not a valid HTML color name');
+    }
+
+    if (!isJsonString(badgeData.attributes)) {
+        return errorHandler(res, 'attributes is not a valid JSON string');
     }
 
     const recipientsChains: string[] = [];

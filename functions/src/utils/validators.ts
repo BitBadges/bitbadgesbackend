@@ -1,6 +1,15 @@
 const isNumber = (val: number) => typeof val === 'number' && val === val;
 const isStringEmpty = (val: string) => val.trim() === '';
 
+export function isJsonString(str: string) {
+    try {
+        JSON.parse(str);
+    } catch (e) {
+        return false;
+    }
+    return true;
+}
+
 export function isColor(strColor: string) {
     const RegExp = /^#[0-9A-F]{6}$/i;
     return !!RegExp.test(strColor);
