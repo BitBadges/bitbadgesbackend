@@ -175,6 +175,12 @@ export async function removeAcceptedBadge(expressReq: Request, res: Response) {
                 badgesAccepted: firestoreRef.FieldValue.arrayRemove(badgeId)
             });
 
+            await db.doc(`/badges/${badgeId}`).update(
+                {
+                    dateAccepted: firestoreRef.FieldValue.delete()
+                }
+            );
+
             return successHandler(res, { general: 'Successfully removed badge' });
         } else {
             return errorHandler(res, `${badgeId} not in pending array`);
