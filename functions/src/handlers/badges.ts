@@ -367,5 +367,58 @@ export async function createBadge(expressReq: Request, res: Response) {
         return errorHandler(res, errorMessage);
     }
 
+    try {
+        sendNotifications(badgeData.recipients);
+    } catch (error) {
+        const errorMessage = 'Could not send notification messages from @BitBadgesHash. Everything else has been updated successfully except for the notification messages. Please reach out to @BitBadges to notify them.';
+        const issuer: string = badgeData.issuer;
+        const recipients: string[] = badgeData.recipients;
+        console.error(new Error(`${errorMessage} --- badgeId: ${ipfsHash} --- issuer: ${issuer} --- recipients: ${recipients.toString()}`));
+        return errorHandler(res, errorMessage);
+    }
+
     return successHandler(res, badgeData);
+}
+
+async function sendNotifications(recipients: string[]) {
+    try {
+        for (const recipient of recipients) {
+            let url = 'https://bitclout.com/api/v0/send-message-stateless';
+
+            const data = await fetch(url, {
+                method: 'post',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    'SenderPublicKeyBase58Check': 'BC1YLgvPruTYF3R66H96g1nCq9jhewpH7k8iwjQr7WoLacby8tNZNan',
+                    'RecipientPublicKeyBase58Check': recipient,
+                    'MessageText': 'You have been issued a BitBadge! Please go to your pending badges to accept/decline.',
+                    'MinFeeRateNanosPerKB': 1000
+                })
+            }).then(response => response.json());
+
+            const transactionHex = data.TransactionHex;
+
+            url = 'https://us-central1-bitbadgespostbot.cloudfunctions.net/api/sign';
+
+            const signedData = await fetch(url, {
+                method: 'post',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ transactionHex }),
+            }).then(response => response.json());
+
+            const signedHex = signedData.signedHex;
+
+            url = 'https://bitclout.com/api/v0/submit-transaction';
+
+            await fetch(url, {
+                method: 'post',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ TransactionHex: signedHex }),
+            });
+
+            setTimeout(() => { }, 10000);
+        }
+    } catch (error) {
+        console.log('Error sending notifications');
+    }
 }
