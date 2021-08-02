@@ -6,4 +6,6 @@
 
 # BitBadges Backend
 
+> This is the repository for our backend.
+
 Link to documentation: https://bitbadges.github.io/
