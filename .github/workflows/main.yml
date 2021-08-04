@@ -12,12 +12,11 @@ jobs:
       uses: actions/setup-node@v2
       with:
        node-version: ${{ matrix.node-version }}    
-    - name: Check out code
-      uses: actions/checkout@master
-    - name: npm install, and test
+    - name: Install TypeScript
       run: |
-          npm install
-          npm install typescript
+          npm install typescript -g
+    - name: Check out code
+      uses: actions/checkout@master          
     - name: Deploy to Firebase
       uses: BIGG-Kaymo/deploy-firebase-functions@v1.0.1
       env:
