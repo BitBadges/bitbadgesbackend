@@ -8,7 +8,13 @@
         "npm --prefix \"$RESOURCE_DIR\" run build"
       ]
   },
+  {
   "hosting": {
-    "public": "bitbadges.web.app"
-  }
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  },
 }
