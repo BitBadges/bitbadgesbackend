@@ -9,6 +9,6 @@
       ]
   },
   "hosting": {
-    "public": "bitbadges"
+    "bitbadges": "bitbadges"
   }
 }
