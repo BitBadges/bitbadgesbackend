@@ -16,8 +16,9 @@ jobs:
       run: |
            npm install -g concurrently && npm install -g typescript --force
     - name: install libraries
-      run: cd functions
-           npm install
+      run: |
+          cd functions
+          npm install
       working-directory: ${{env.working-directory}}
     - name: install firebase
       run: npm i firebase-tools -g
