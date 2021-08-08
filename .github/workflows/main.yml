@@ -15,15 +15,13 @@ jobs:
     - name: Install TypeScript
       run: |
            npm install -g concurrently && npm install -g typescript --force
-    - name: install libraries
-      run: |
-          cd functions
-          npm install
-      working-directory: ${{env.working-directory}}
-    - name: install firebase
-      run: npm i firebase-tools -g
+    - name: Install TypeScript
+      run: ls
+    - name: check tsc
+      run: tsc -v
+      
     - name: Check out code
-      uses: actions/checkout@master          
+      uses: actions/checkout@master
     - name: Deploy to Firebase
       uses: w9jds/firebase-action@master
       with:
