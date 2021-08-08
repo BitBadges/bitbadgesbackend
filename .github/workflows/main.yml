@@ -15,10 +15,6 @@ jobs:
     - name: Install TypeScript
       run: |
            npm install -g concurrently && npm install -g typescript --force
-    - name: Install npm packages
-      run: |
-        cd functions
-        npm install
     - name: Check out code
       uses: actions/checkout@master          
     - name: Deploy to Firebase
