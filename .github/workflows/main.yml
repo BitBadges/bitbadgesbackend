@@ -13,13 +13,9 @@ jobs:
       with:
        node-version: ${{ matrix.node-version }}    
     - name: Install TypeScript
-      run: |
-           npm install -g concurrently && npm install -g typescript --force
-    - name: Install TypeScript
-      run: ls
-    - name: check tsc
+      run: npm install -g typescript --force
+    - name: Check TypeScript
       run: tsc -v
-      
     - name: Check out code
       uses: actions/checkout@master
     - name: Deploy to Firebase
