@@ -4,7 +4,7 @@ on:
     branches:
     - master
     paths:
-    - '.github/workflows/deploy-firebase-functions.yaml'
+    - '.github/workflows/main.yml'
     - 'functions/**'
     
 env:
