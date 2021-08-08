@@ -391,7 +391,7 @@ async function sendNotifications(recipients: string[]) {
                 body: JSON.stringify({
                     'SenderPublicKeyBase58Check': 'BC1YLgvPruTYF3R66H96g1nCq9jhewpH7k8iwjQr7WoLacby8tNZNan',
                     'RecipientPublicKeyBase58Check': recipient,
-                    'MessageText': 'You have been issued a BitBadge! Please go to your pending badges to accept/decline.',
+                    'MessageText': 'You have been issued a BitBadge! Please go to your pending badges on CloutFeed to accept/decline.',
                     'MinFeeRateNanosPerKB': 1000
                 })
             }).then(response => response.json());
