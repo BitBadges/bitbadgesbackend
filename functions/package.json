@@ -21,7 +21,7 @@
     "firebase-admin": "^9.2.0",
     "firebase-functions": "^3.11.0",
     "ipfs-http-client": "^50.0.0",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "key-encoder": "^2.0.3",
     "node-fetch": "^2.6.1",
     "yargs": "^17.0.1"
